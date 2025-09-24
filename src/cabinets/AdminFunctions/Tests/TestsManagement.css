@@ -1,0 +1,408 @@
+/* Основной контейнер */
+.tests_management_container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.tests_management_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tests_management_controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.tests_management_direction_select {
+  padding: 10px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.tests_management_direction_select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.tests_management_title {
+  color: #2c3e50;
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tests_management_create_btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.tests_management_create_btn:hover {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+/* Состояния загрузки и ошибок */
+.tests_management_loading,
+.tests_management_error,
+.tests_management_empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.loading_spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tests_management_error p {
+  color: #dc3545;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.retry_btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.retry_btn:hover {
+  background: #0056b3;
+}
+
+.tests_management_empty p {
+  color: #6c757d;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+/* Список тестов */
+.tests_management_list {
+  display: grid;
+  gap: 20px;
+}
+
+.test_card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.test_card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.test_card_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.test_card_title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+
+.test_status_badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.test_status_active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.test_status_inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.test_status_upcoming {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.test_status_ended {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.test_card_content {
+  padding: 20px;
+}
+
+.test_card_info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.test_info_item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.test_info_label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.test_info_value {
+  font-size: 1rem;
+  color: #495057;
+  font-weight: 600;
+}
+
+.test_card_questions {
+  border-top: 1px solid #e9ecef;
+  padding-top: 20px;
+}
+
+.test_card_questions h4 {
+  color: #495057;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.questions_preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.question_preview_item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.question_preview_number {
+  font-weight: 600;
+  color: #007bff;
+  min-width: 20px;
+}
+
+.question_preview_text {
+  flex: 1;
+  color: #495057;
+  line-height: 1.4;
+}
+
+.question_preview_type {
+  color: #6c757d;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.question_preview_more {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background: #e9ecef;
+  border-radius: 6px;
+}
+
+.test_card_actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+.test_action_btn {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.test_action_view {
+  background: #17a2b8;
+  color: white;
+}
+
+.test_action_view:hover {
+  background: #138496;
+}
+
+.test_action_edit {
+  background: #007bff;
+  color: white;
+}
+
+.test_action_edit:hover {
+  background: #0056b3;
+}
+
+.test_action_delete {
+  background: #dc3545;
+  color: white;
+}
+
+.test_action_delete:hover {
+  background: #c82333;
+}
+
+/* Виды создания и редактирования */
+.tests_management_create,
+.tests_management_edit {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.tests_management_create_header,
+.tests_management_edit_header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.back_to_list_btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.back_to_list_btn:hover {
+  background: #5a6268;
+}
+
+.tests_management_create_header h2,
+.tests_management_edit_header h2 {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .tests_management_container {
+    padding: 10px;
+  }
+  
+  .tests_management_header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .test_card_header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .test_card_info {
+    grid-template-columns: 1fr;
+  }
+  
+  .test_card_actions {
+    flex-direction: column;
+  }
+  
+  .tests_management_create_header,
+  .tests_management_edit_header {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .test_card_content {
+    padding: 15px;
+  }
+  
+  .test_card_actions {
+    padding: 15px;
+  }
+  
+  .question_preview_item {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .question_preview_type {
+    align-self: flex-start;
+  }
+}

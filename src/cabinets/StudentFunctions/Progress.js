@@ -53,43 +53,9 @@ const Progress = ({ onBack }) => {
     <div className="content-section">
       <div className="welcome-section">
         <h2>Добро пожаловать, {studentName}! 👋</h2>
-        <p>Здесь вы можете посмотреть свою успеваемость</p>
       </div>
       
-      <div className="ratings-container">
-        <h3>Ваша успеваемость</h3>
-        
-        {loading && <p>Загрузка данных...</p>}
-        {error && <p className="error-message">{error}</p>}
-        
-        {ratings && (
-          <div className="ratings-grid">
-            <div className="rating-card">
-              <h4>Общий рейтинг</h4>
-              <div className="big-rate">{ratings.rate}</div>
-              {renderBar(ratings.rate, 100, 'Общий рейтинг')}
-            </div>
-            
-            <div className="rating-card">
-              <h4>Домашние задания</h4>
-              <div className="rate-value">{ratings.homework_rate}</div>
-              {renderBar(ratings.homework_rate, 100, 'Выполнение ДЗ')}
-            </div>
-            
-            <div className="rating-card">
-              <h4>Тесты</h4>
-              <div className="rate-value">{ratings.test_rate}</div>
-              {renderBar(ratings.test_rate, 100, 'Результаты тестов')}
-            </div>
-            
-            <div className="rating-card">
-              <h4>Экзамены</h4>
-              <div className="rate-value">{ratings.exam_rate}</div>
-              {renderBar(ratings.exam_rate, 100, 'Экзаменационные оценки')}
-            </div>
-          </div>
-        )}
-      </div>
+      
     </div>
   );
 };

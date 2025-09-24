@@ -3,7 +3,7 @@ import Homework from './AdminFunctions/Homework/Homework';
 import GroupsFunc from './AdminFunctions/Groups/GroupsFunc';
 import Attendance from './AdminFunctions/Attendance/Attendance';
 import UsersByRole from './AdminFunctions/Users/UsersByRole';
-import TestCreate from './AdminFunctions/Tests/TestCreate';
+import TestsManagement from './AdminFunctions/Tests/TestsManagement';
 import { ScanAttendance } from './AdminFunctions/ScanAttedance/ScanAttendance';
 import Exams from './AdminFunctions/Exams/Exams'; // Добавляем импорт нового компонента
 
@@ -38,7 +38,7 @@ const AdminCabinet = () => {
       case 'attendance':
         return <Attendance />;
       case 'tests':
-        return <TestCreate />;
+        return <TestsManagement />;
       case 'scan':
         return <ScanAttendance />;
       case 'exams': // Добавляем новый case для экзаменов

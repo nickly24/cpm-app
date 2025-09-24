@@ -29,25 +29,25 @@ const MainContent = () => {
           >
             Тесты
           </div>
-          <div 
+          {/*<div 
             className="menu-item" 
             onClick={() => setActiveSection('progress')}
           >
             Успеваемость
-          </div>
-          <div 
+          </div>*/}
+          {/*<div 
             className="menu-item training-item" 
             onClick={() => setActiveSection('training')}
           >
             ТРЕНИРОВКА
-          </div>
+          </div>*/}
         </div>
       ) : (
         <>
           {activeSection === 'homework' && <Homework onBack={handleBack} />}
           {activeSection === 'tests' && <Tests onBack={handleBack} />}
-          {activeSection === 'progress' && <Progress onBack={handleBack} />}
-          {activeSection === 'training' && <Training onBack={handleBack} />}
+          {/*{activeSection === 'progress' && <Progress onBack={handleBack} />}*/}
+          {/*{activeSection === 'training' && <Training onBack={handleBack} />}*/}  
         </>
       )}
     </div>
