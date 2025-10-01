@@ -24,20 +24,48 @@
   gap: 15px;
 }
 
-.tests_management_direction_select {
-  padding: 10px 15px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 1rem;
+/* Убираем старый select, заменяем табами */
+
+/* Табы направлений */
+.tests_management_directions_tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 20px;
   background: white;
-  cursor: pointer;
-  transition: border-color 0.3s ease;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.tests_management_direction_select:focus {
-  outline: none;
+.tests_management_direction_tab {
+  padding: 10px 18px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tests_management_direction_tab:hover {
+  background: #f8f9fa;
+  color: #495057;
   border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tests_management_direction_tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
 }
 
 .tests_management_title {
@@ -114,6 +142,203 @@
   color: #6c757d;
   font-size: 1.2rem;
   margin-bottom: 20px;
+}
+
+/* Фильтры */
+.tests_management_filters {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tests_management_search {
+  margin-bottom: 16px;
+}
+
+.tests_management_search_input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.tests_management_search_input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.tests_management_date_filters {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tests_management_date_filter_group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.tests_management_date_label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+}
+
+.tests_management_date_input {
+  padding: 10px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: white;
+  color: #495057;
+}
+
+.tests_management_date_input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.tests_management_clear_filters_btn {
+  padding: 10px 16px;
+  border: 2px solid #dc3545;
+  background: white;
+  color: #dc3545;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: fit-content;
+  align-self: end;
+}
+
+.tests_management_clear_filters_btn:hover:not(:disabled) {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.tests_management_clear_filters_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tests_management_filter_buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tests_management_filter_btn {
+  padding: 10px 16px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tests_management_filter_btn:hover {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+.tests_management_filter_btn.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Пагинация */
+.tests_management_pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tests_management_pagination_btn {
+  padding: 10px 16px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tests_management_pagination_btn:hover:not(:disabled) {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+.tests_management_pagination_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tests_management_pagination_pages {
+  display: flex;
+  gap: 4px;
+}
+
+.tests_management_pagination_page {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tests_management_pagination_page:hover {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+.tests_management_pagination_page.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
 /* Список тестов */
@@ -365,6 +590,56 @@
     flex-direction: column;
     gap: 15px;
     text-align: center;
+  }
+
+  .tests_management_directions_tabs {
+    padding: 15px;
+    gap: 6px;
+  }
+  
+  .tests_management_direction_tab {
+    padding: 8px 14px;
+    font-size: 13px;
+    flex: 1 1 auto;
+    text-align: center;
+    min-width: fit-content;
+  }
+  
+  .tests_management_filters {
+    padding: 15px;
+  }
+  
+  .tests_management_date_filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .tests_management_date_filter_group {
+    min-width: auto;
+  }
+  
+  .tests_management_clear_filters_btn {
+    align-self: stretch;
+    text-align: center;
+  }
+  
+  .tests_management_filter_buttons {
+    flex-direction: column;
+  }
+  
+  .tests_management_filter_btn {
+    text-align: center;
+  }
+  
+  .tests_management_pagination {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tests_management_pagination_pages {
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
   .test_card_header {

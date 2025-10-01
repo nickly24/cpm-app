@@ -107,7 +107,7 @@ const StudentHomeworkList = () => {
               
               <div className="hw-status">
                 {isSubmitted ? (
-                  <span className="result">Оценка: {hw.result} баллов</span>
+                  <span className="result">Оценка: {parseInt(hw.result)} баллов</span>
                 ) : (
                   <span className="status">{hw.status}</span>
                 )}

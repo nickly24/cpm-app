@@ -88,8 +88,8 @@ const Exams = () => {
         
         <h2>Результаты экзамена</h2>
         <div className="exam-summary">
-          <p><strong>Оценка:</strong> {examDetails.grade}</p>
-          <p><strong>Баллы:</strong> {examDetails.score}</p>
+          <p><strong>Оценка:</strong> {parseInt(examDetails.grade)}</p>
+          <p><strong>Баллы:</strong> {parseInt(examDetails.score)}</p>
         </div>
 
         <div className="questions-list">
@@ -98,7 +98,7 @@ const Exams = () => {
             <div key={answer.question_id} className="question-item">
               <p><strong>Вопрос {index + 1}:</strong> {answer.question}</p>
               <p><strong>Правильный ответ:</strong> {answer.correct_answer}</p>
-              <p><strong>Результат:</strong> {answer.result} баллов</p>
+              <p><strong>Результат:</strong> {parseInt(answer.result)} баллов</p>
             </div>
           ))}
         </div>

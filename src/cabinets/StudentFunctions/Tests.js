@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import './Tests.css';
 import { API_EXAM_URL } from '../../Config';
 
-export default function Tests() {
+export default function Tests({ onBack }) {
   const [directions, setDirections] = useState([]);
   const [selectedDirection, setSelectedDirection] = useState(null);
   const [tests, setTests] = useState([]);
@@ -14,6 +14,15 @@ export default function Tests() {
   const [testResults, setTestResults] = useState(null);
   const [isPracticeMode, setIsPracticeMode] = useState(false);
   const [testStats, setTestStats] = useState({});
+  const [testReview, setTestReview] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filter, setFilter] = useState('all'); // 'all', 'available', 'upcoming', 'completed', 'missed'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState({
+    startDate: '',
+    endDate: ''
+  });
+  const [showDirections, setShowDirections] = useState(true);
 
   // Загрузка направлений при монтировании компонента
   useEffect(() => {
@@ -42,12 +51,16 @@ export default function Tests() {
     }
   }, []);
 
-  // Загрузка тестов при выборе направления
+  // Автоматически выбираем первое направление при загрузке
   useEffect(() => {
-    if (selectedDirection) {
-      loadTests(selectedDirection);
+    if (directions.length > 0 && !selectedDirection) {
+      const firstDirection = directions[0];
+      setSelectedDirection(firstDirection);
+      setShowDirections(false);
+      loadTests(firstDirection);
     }
-  }, [selectedDirection]);
+  }, [directions, selectedDirection]);
+
 
   const loadDirections = async () => {
     try {
@@ -109,7 +122,8 @@ export default function Tests() {
   const loadTests = async (direction) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_EXAM_URL}/tests/${encodeURIComponent(direction)}`);
+      const directionName = typeof direction === 'string' ? direction : direction.name;
+      const response = await fetch(`${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}`);
       if (!response.ok) throw new Error('Ошибка загрузки тестов');
       const data = await response.json();
       setTests(data);
@@ -134,6 +148,31 @@ export default function Tests() {
     } catch (err) {
       setError('Не удалось восстановить тест: ' + err.message);
       localStorage.removeItem('testSession');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTestReview = async (testId, sessionId) => {
+    try {
+      setLoading(true);
+      
+      // Загружаем тест
+      const testResponse = await fetch(`${API_EXAM_URL}/test/${testId}`);
+      if (!testResponse.ok) throw new Error('Тест не найден');
+      const testData = await testResponse.json();
+      
+      // Загружаем статистику с ответами
+      const statsResponse = await fetch(`${API_EXAM_URL}/test-session/${sessionId}/stats`);
+      if (!statsResponse.ok) throw new Error('Статистика не найдена');
+      const statsData = await statsResponse.json();
+      
+      setTestReview({
+        test: testData,
+        stats: statsData
+      });
+    } catch (err) {
+      setError('Не удалось загрузить разбор теста: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -180,8 +219,14 @@ export default function Tests() {
     setCurrentTest(null);
     setTestSession(null);
     setTestResults(null);
+    setTestReview(null);
     setIsPracticeMode(false);
     setError(null); // Очищаем ошибки
+    setCurrentPage(1);
+    setFilter('all');
+    setSearchTerm('');
+    setDateFilter({ startDate: '', endDate: '' });
+    setShowDirections(false);
     localStorage.removeItem('testSession');
     
     // Обновляем список сданных тестов
@@ -193,6 +238,7 @@ export default function Tests() {
     setTestSession(null);
     setIsPracticeMode(false);
     setError(null); // Очищаем ошибки
+    setShowDirections(false);
     localStorage.removeItem('testSession');
     
     // Обновляем список сданных тестов
@@ -204,8 +250,20 @@ export default function Tests() {
     setTests([]);
     setCurrentTest(null);
     setTestSession(null);
+    setShowDirections(true);
     localStorage.removeItem('testSession');
   };
+
+  // Если есть разбор теста, показываем его
+  if (testReview) {
+    return (
+      <TestReview 
+        test={testReview.test}
+        stats={testReview.stats}
+        onBack={resetTest}
+      />
+    );
+  }
 
   // Если есть результаты теста, показываем их
   if (testResults) {
@@ -232,31 +290,58 @@ export default function Tests() {
     );
   }
 
-  // Если выбрано направление, показываем список тестов
-  if (selectedDirection) {
-    return (
-      <TestsList 
-        direction={selectedDirection}
-        tests={tests}
-        completedTests={completedTests}
-        testStats={testStats}
-        loading={loading}
-        error={error}
-        onStartTest={startTest}
-        onStartPractice={(testId) => startTest(testId, true)}
-        onBack={goBackToDirections}
-      />
-    );
-  }
-
-  // Показываем выбор направления
+  // Показываем объединенное окно с направлениями и тестами
   return (
-    <DirectionsList 
-      directions={directions}
-      loading={loading}
-      error={error}
-      onSelectDirection={setSelectedDirection}
-    />
+    <div className="tests_tests">
+      <div className="tests_header">
+        <h2 className="tests_title">Тесты</h2>
+      </div>
+
+      {/* Табы направлений */}
+      <div className="tests_directions_tabs">
+        {directions.map(direction => (
+          <button
+            key={direction.id}
+            className={`tests_direction_tab ${selectedDirection?.id === direction.id ? 'active' : ''}`}
+            onClick={() => {
+              setSelectedDirection(direction);
+              setShowDirections(false);
+              setCurrentPage(1);
+              setFilter('all');
+              setSearchTerm('');
+              setDateFilter({ startDate: '', endDate: '' });
+              loadTests(direction);
+            }}
+          >
+            {direction.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Контент тестов */}
+      {selectedDirection && (
+        <TestsList 
+          direction={selectedDirection}
+          tests={tests}
+          completedTests={completedTests}
+          testStats={testStats}
+          loading={loading}
+          error={error}
+          onStartTest={startTest}
+          onStartPractice={(testId) => startTest(testId, true)}
+          onViewResults={loadTestReview}
+          onBack={goBackToTests}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          filter={filter}
+          setFilter={setFilter}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+        />
+      )}
+    </div>
   );
 }
 
@@ -294,7 +379,12 @@ function DirectionsList({ directions, loading, error, onSelectDirection }) {
 }
 
 // Компонент списка тестов
-function TestsList({ direction, tests, completedTests, testStats, loading, error, onStartTest, onStartPractice, onBack }) {
+function TestsList({ 
+  direction, tests, completedTests, testStats, loading, error, 
+  onStartTest, onStartPractice, onViewResults, onBack,
+  currentPage, setCurrentPage, filter, setFilter, searchTerm, setSearchTerm,
+  dateFilter, setDateFilter
+}) {
   if (error) {
     return (
       <div className="tests_error">
@@ -308,11 +398,72 @@ function TestsList({ direction, tests, completedTests, testStats, loading, error
     return <div className="tests_loading">Загрузка тестов...</div>;
   }
 
-  const isTestAvailable = (test) => {
+  // Группировка тестов
+  const groupTests = (tests) => {
     const now = new Date();
-    const startDate = new Date(test.startDate);
-    const endDate = new Date(test.endDate);
-    return now >= startDate && now <= endDate;
+    const available = [];
+    const upcoming = [];
+    const completed = [];
+    const missed = [];
+    
+    tests.forEach(test => {
+      const startDate = new Date(test.startDate);
+      const endDate = new Date(test.endDate);
+      const isCompleted = completedTests.some(completed => completed.testId === test.id);
+      
+      if (isCompleted) {
+        completed.push(test);
+      } else if (now >= startDate && now <= endDate) {
+        available.push(test);
+      } else if (now < startDate) {
+        upcoming.push(test);
+      } else if (now > endDate) {
+        // Тест уже закончился, но не был сдан - пропущен
+        missed.push(test);
+      }
+    });
+    
+    return { available, upcoming, completed, missed };
+  };
+
+  // Фильтрация тестов
+  const filterTests = (tests, searchTerm) => {
+    if (!searchTerm) return tests;
+    return tests.filter(test => 
+      test.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  // Фильтрация по датам
+  const filterTestsByDate = (tests, dateFilter) => {
+    if (!dateFilter.startDate && !dateFilter.endDate) return tests;
+    
+    return tests.filter(test => {
+      const testStartDate = new Date(test.startDate);
+      const testEndDate = new Date(test.endDate);
+      
+      let matchesStart = true;
+      let matchesEnd = true;
+      
+      if (dateFilter.startDate) {
+        const filterStartDate = new Date(dateFilter.startDate);
+        matchesStart = testStartDate >= filterStartDate;
+      }
+      
+      if (dateFilter.endDate) {
+        const filterEndDate = new Date(dateFilter.endDate);
+        matchesEnd = testEndDate <= filterEndDate;
+      }
+      
+      return matchesStart && matchesEnd;
+    });
+  };
+
+  // Пагинация
+  const paginateTests = (tests, page, itemsPerPage = 4) => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return tests.slice(startIndex, endIndex);
   };
 
   const isTestCompleted = (test) => {
@@ -325,79 +476,271 @@ function TestsList({ direction, tests, completedTests, testStats, loading, error
     return { ...completedTest, stats };
   };
 
-  return (
-    <div className="tests_tests">
-      <div className="tests_header">
-        <button className="tests_back_btn" onClick={onBack}>← Назад</button>
-        <h2 className="tests_title">Тесты по направлению: {direction}</h2>
+  const groupedTests = groupTests(tests);
+  
+  // Применяем все фильтры
+  const filteredAvailable = filterTestsByDate(
+    filterTests(groupedTests.available, searchTerm), 
+    dateFilter
+  );
+  const filteredUpcoming = filterTestsByDate(
+    filterTests(groupedTests.upcoming, searchTerm), 
+    dateFilter
+  );
+  const filteredCompleted = filterTestsByDate(
+    filterTests(groupedTests.completed, searchTerm), 
+    dateFilter
+  );
+  const filteredMissed = filterTestsByDate(
+    filterTests(groupedTests.missed, searchTerm), 
+    dateFilter
+  );
+
+  // Определяем какие тесты показывать в зависимости от фильтра
+  let testsToShow = [];
+  if (filter === 'available') testsToShow = filteredAvailable;
+  else if (filter === 'upcoming') testsToShow = filteredUpcoming;
+  else if (filter === 'completed') testsToShow = filteredCompleted;
+  else if (filter === 'missed') testsToShow = filteredMissed;
+  else testsToShow = [...filteredAvailable, ...filteredUpcoming, ...filteredCompleted, ...filteredMissed];
+
+  const paginatedTests = paginateTests(testsToShow, currentPage);
+  const totalPages = Math.ceil(testsToShow.length / 4);
+
+  const TestCard = ({ test, type }) => {
+    const completed = isTestCompleted(test);
+    const testResult = getTestResult(test);
+    const now = new Date();
+    const startDate = new Date(test.startDate);
+    const endDate = new Date(test.endDate);
+    const available = now >= startDate && now <= endDate;
+
+    return (
+      <div key={test.id} className={`tests_test_card ${completed ? 'completed' : ''} ${type}`}>
+        <div className="tests_test_card_header">
+          <h3 className="tests_test_title">{test.title}</h3>
+          <div className={`tests_test_type_badge ${type}`}>
+            {type === 'available' && 'Доступен'}
+            {type === 'upcoming' && 'Скоро'}
+            {type === 'completed' && 'Сдан'}
+            {type === 'missed' && 'Пропущен'}
+          </div>
+        </div>
+        
+        <div className="tests_test_info">
+          <p><strong>Время выполнения:</strong> {test.timeLimitMinutes} минут</p>
+          <p><strong>Период проведения:</strong></p>
+          <p>{new Date(test.startDate).toLocaleDateString()} - {new Date(test.endDate).toLocaleDateString()}</p>
+          
+          {completed && testResult ? (
+            <div className="tests_test_completed_info">
+              <p><strong>Рейтинговый балл:</strong> {parseInt(testResult.score) || 0} из 100</p>
+              {testResult.stats ? (
+                <>
+                  <p><strong>Правильных ответов:</strong> {testResult.stats.correctAnswers || 0} из {testResult.stats.totalQuestions || 0}</p>
+                  <p><strong>Точность:</strong> {testResult.stats.accuracy || 0}%</p>
+                </>
+              ) : (
+                <p><em>Загрузка статистики...</em></p>
+              )}
+              <p><strong>Время выполнения:</strong> {testResult.timeSpentMinutes || 0} мин</p>
+            </div>
+          ) : type === 'upcoming' ? (
+            <p className="tests_test_status upcoming">Начнется {new Date(test.startDate).toLocaleDateString()}</p>
+          ) : type === 'missed' ? (
+            <p className="tests_test_status missed">Пропущен - закончился {new Date(test.endDate).toLocaleDateString()}</p>
+          ) : (
+            <p className={`tests_test_status ${available ? 'available' : 'unavailable'}`}>
+              {available ? 'Доступен' : 'Недоступен'}
+            </p>
+          )}
+        </div>
+        
+        <div className="tests_test_actions">
+          {!completed && available && (
+            <button 
+              className="tests_start_btn enabled"
+              onClick={() => onStartTest(test.id)}
+            >
+              Начать тест
+            </button>
+          )}
+          
+          {completed && (
+            <>
+              <button 
+                className="tests_view_results_btn"
+                onClick={() => onViewResults(test.id, testResult.id)}
+              >
+                Посмотреть результаты
+              </button>
+              <button 
+                className="tests_practice_btn"
+                onClick={() => onStartPractice(test.id)}
+              >
+                Потренироваться
+              </button>
+            </>
+          )}
+          
+          {type === 'upcoming' && (
+            <button className="tests_start_btn disabled" disabled>
+              Скоро будет доступен
+            </button>
+          )}
+          
+          {type === 'missed' && (
+            <button className="tests_start_btn disabled" disabled>
+              Пропущен - больше недоступен
+            </button>
+          )}
+        </div>
       </div>
-      
+    );
+  };
+
+  return (
+    <div className="tests_tests_content">
+
+      {/* Фильтры и поиск */}
+      <div className="tests_filters">
+        <div className="tests_search">
+          <input
+            type="text"
+            placeholder="Поиск тестов..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="tests_search_input"
+          />
+        </div>
+        
+        <div className="tests_date_filters">
+          <div className="tests_date_filter_group">
+            <label className="tests_date_label">С даты:</label>
+            <input
+              type="date"
+              value={dateFilter.startDate}
+              onChange={(e) => { 
+                setDateFilter({...dateFilter, startDate: e.target.value}); 
+                setCurrentPage(1); 
+              }}
+              className="tests_date_input"
+            />
+          </div>
+          
+          <div className="tests_date_filter_group">
+            <label className="tests_date_label">По дату:</label>
+            <input
+              type="date"
+              value={dateFilter.endDate}
+              onChange={(e) => { 
+                setDateFilter({...dateFilter, endDate: e.target.value}); 
+                setCurrentPage(1); 
+              }}
+              className="tests_date_input"
+            />
+          </div>
+          
+          <button 
+            className="tests_clear_filters_btn"
+            onClick={() => { 
+              setDateFilter({ startDate: '', endDate: '' }); 
+              setCurrentPage(1); 
+            }}
+            disabled={!dateFilter.startDate && !dateFilter.endDate}
+          >
+            Очистить даты
+          </button>
+        </div>
+        
+        <div className="tests_filter_buttons">
+          <button 
+            className={`tests_filter_btn ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => { setFilter('all'); setCurrentPage(1); }}
+          >
+            Все ({tests.length})
+          </button>
+          <button 
+            className={`tests_filter_btn ${filter === 'available' ? 'active' : ''}`}
+            onClick={() => { setFilter('available'); setCurrentPage(1); }}
+          >
+            Доступные ({filteredAvailable.length})
+          </button>
+          <button 
+            className={`tests_filter_btn ${filter === 'upcoming' ? 'active' : ''}`}
+            onClick={() => { setFilter('upcoming'); setCurrentPage(1); }}
+          >
+            Скоро ({filteredUpcoming.length})
+          </button>
+          <button 
+            className={`tests_filter_btn ${filter === 'completed' ? 'active' : ''}`}
+            onClick={() => { setFilter('completed'); setCurrentPage(1); }}
+          >
+            Сданные ({filteredCompleted.length})
+          </button>
+          <button 
+            className={`tests_filter_btn ${filter === 'missed' ? 'active' : ''}`}
+            onClick={() => { setFilter('missed'); setCurrentPage(1); }}
+          >
+            Пропущенные ({filteredMissed.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Список тестов */}
       <div className="tests_tests_list">
-        {tests.length === 0 ? (
+        {paginatedTests.length === 0 ? (
           <p className="tests_no_tests">Тесты не найдены</p>
         ) : (
-          tests.map(test => {
+          paginatedTests.map(test => {
             const completed = isTestCompleted(test);
-            const testResult = getTestResult(test);
-            const available = isTestAvailable(test);
+            const now = new Date();
+            const startDate = new Date(test.startDate);
+            const endDate = new Date(test.endDate);
+            const available = now >= startDate && now <= endDate;
             
-            return (
-              <div key={test.id} className={`tests_test_card ${completed ? 'completed' : ''}`}>
-                <h3 className="tests_test_title">{test.title}</h3>
-                <div className="tests_test_info">
-                  <p><strong>Время выполнения:</strong> {test.timeLimitMinutes} минут</p>
-                  <p><strong>Период проведения:</strong></p>
-                  <p>{new Date(test.startDate).toLocaleDateString()} - {new Date(test.endDate).toLocaleDateString()}</p>
-                  
-                  {completed && testResult ? (
-                    <div className="tests_test_completed_info">
-                      <p className="tests_test_status completed">✅ Сдан</p>
-                      <p><strong>Результат:</strong> {testResult.score || 0} баллов</p>
-                      {testResult.stats ? (
-                        <>
-                          <p><strong>Правильных ответов:</strong> {testResult.stats.correctAnswers || 0} из {testResult.stats.totalQuestions || 0}</p>
-                          <p><strong>Точность:</strong> {testResult.stats.accuracy || 0}%</p>
-                        </>
-                      ) : (
-                        <p><em>Загрузка детальной статистики...</em></p>
-                      )}
-                      <p><strong>Время выполнения:</strong> {testResult.timeSpentMinutes || 0} мин</p>
-                    </div>
-                  ) : (
-                    <p className={`tests_test_status ${available ? 'available' : 'unavailable'}`}>
-                      {available ? 'Доступен' : 'Недоступен'}
-                    </p>
-                  )}
-                </div>
-                
-                {!completed && (
-                  <button 
-                    className={`tests_start_btn ${available ? 'enabled' : 'disabled'}`}
-                    onClick={() => available && onStartTest(test.id)}
-                    disabled={!available}
-                  >
-                    {available ? 'Начать тест' : 'Недоступен'}
-                  </button>
-                )}
-                
-                {completed && (
-                  <div className="tests_test_completed_actions">
-                    <span className="tests_test_completed_text">Тест уже сдан</span>
-                    <br />
-                    <br />
-                    <button 
-                      className="tests_practice_btn"
-                      onClick={() => onStartPractice(test.id)}
-                    >
-                      Потренироваться
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
+            let type = 'available';
+            if (completed) type = 'completed';
+            else if (now < startDate) type = 'upcoming';
+            else if (now > endDate) type = 'missed';
+            
+            return <TestCard key={test.id} test={test} type={type} />;
           })
         )}
       </div>
+
+      {/* Пагинация */}
+      {totalPages > 1 && (
+        <div className="tests_pagination">
+          <button 
+            className="tests_pagination_btn"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            ← Предыдущая
+          </button>
+          
+          <div className="tests_pagination_pages">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                className={`tests_pagination_page ${currentPage === page ? 'active' : ''}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+          
+          <button 
+            className="tests_pagination_btn"
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Следующая →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -504,9 +847,18 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
         points = isCorrect ? question.points : 0;
       } else if (question.type === 'multiple') {
         const correctAnswers = question.answers.filter(a => a.isCorrect).map(a => a.id);
+        const incorrectAnswers = question.answers.filter(a => !a.isCorrect).map(a => a.id);
         const selectedAnswers = answer.selectedAnswers || [];
-        isCorrect = correctAnswers.length === selectedAnswers.length && 
-                   correctAnswers.every(id => selectedAnswers.includes(id));
+        
+        // СТРОГАЯ ПРОВЕРКА для множественного выбора:
+        // 1. Выбраны ВСЕ правильные ответы
+        // 2. НЕ выбраны НИ ОДИН неправильный ответ
+        // Если хотя бы одно условие не выполнено - 0 баллов
+        const allCorrectSelected = correctAnswers.length === selectedAnswers.length && 
+                                  correctAnswers.every(id => selectedAnswers.includes(id));
+        const noIncorrectSelected = !selectedAnswers.some(id => incorrectAnswers.includes(id));
+        
+        isCorrect = allCorrectSelected && noIncorrectSelected;
         points = isCorrect ? question.points : 0;
       } else if (question.type === 'text') {
         const correctAnswers = question.correctAnswers.map(ca => ca.toLowerCase().trim());
@@ -523,16 +875,20 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
     });
 
     // Рассчитываем общую статистику
-    const totalPoints = calculatedAnswers.reduce((sum, answer) => sum + answer.points, 0);
-    const maxPoints = test.questions.reduce((sum, question) => sum + question.points, 0);
+    const totalPoints = calculatedAnswers.reduce((sum, answer) => sum + parseInt(answer.points), 0);
+    const maxPoints = test.questions.reduce((sum, question) => sum + parseInt(question.points), 0);
     const correctAnswers = calculatedAnswers.filter(answer => answer.isCorrect).length;
     const accuracy = test.questions.length > 0 ? Math.round((correctAnswers / test.questions.length) * 100) : 0;
     const timeSpentMinutes = Math.ceil((Date.now() - session.startTime) / (1000 * 60));
+    
+    // Рассчитываем рейтинговый балл (процент от максимального балла, выраженный в баллах от 0 до 100)
+    const ratingScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
 
     const results = {
       testTitle: test.title,
-      totalPoints,
-      maxPoints,
+      totalPoints: parseInt(totalPoints),
+      maxPoints: parseInt(maxPoints),
+      ratingScore: ratingScore, // Новое поле - рейтинговый балл
       correctAnswers,
       totalQuestions: test.questions.length,
       accuracy,
@@ -548,13 +904,14 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            studentId: getStudentId(),
-            testId: test._id,
-            testTitle: test.title,
-            answers: calculatedAnswers,
-            timeSpentMinutes: timeSpentMinutes
-          })
+        body: JSON.stringify({
+          studentId: getStudentId(),
+          testId: test._id,
+          testTitle: test.title,
+          answers: calculatedAnswers,
+          timeSpentMinutes: timeSpentMinutes,
+          score: ratingScore // Отправляем рейтинговый балл вместо обычного score
+        })
         });
 
         if (response.ok) {
@@ -614,7 +971,7 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
       {currentQuestion && (
         <div className="tests_question">
           <h3 className="tests_question_text">{currentQuestion.text}</h3>
-          <p className="tests_question_points">Баллов: {currentQuestion.points}</p>
+          <p className="tests_question_points">Баллов: {parseInt(currentQuestion.points)}</p>
           
           <div className="tests_question_answers">
             {currentQuestion.type === 'single' && (
@@ -700,17 +1057,17 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
 // Компонент результатов теста
 function TestResults({ results, isPracticeMode, onBack }) {
-  const getGradeColor = (accuracy) => {
-    if (accuracy >= 90) return '#28a745';
-    if (accuracy >= 70) return '#ffc107';
-    if (accuracy >= 50) return '#fd7e14';
+  const getGradeColor = (ratingScore) => {
+    if (ratingScore >= 90) return '#28a745';
+    if (ratingScore >= 70) return '#ffc107';
+    if (ratingScore >= 50) return '#fd7e14';
     return '#dc3545';
   };
 
-  const getGradeText = (accuracy) => {
-    if (accuracy >= 90) return 'Отлично!';
-    if (accuracy >= 70) return 'Хорошо';
-    if (accuracy >= 50) return 'Удовлетворительно';
+  const getGradeText = (ratingScore) => {
+    if (ratingScore >= 90) return 'Отлично!';
+    if (ratingScore >= 70) return 'Хорошо';
+    if (ratingScore >= 50) return 'Удовлетворительно';
     return 'Неудовлетворительно';
   };
 
@@ -733,15 +1090,15 @@ function TestResults({ results, isPracticeMode, onBack }) {
           <div className="tests_stat_card">
             <div className="tests_stat_icon">📊</div>
             <div className="tests_stat_info">
-              <div className="tests_stat_value">{results.totalPoints} / {results.maxPoints}</div>
-              <div className="tests_stat_label">Баллов набрано</div>
+              <div className="tests_stat_value">{parseInt(results.ratingScore)} / 100</div>
+              <div className="tests_stat_label">Рейтинговый балл</div>
             </div>
           </div>
 
           <div className="tests_stat_card">
             <div className="tests_stat_icon">🎯</div>
             <div className="tests_stat_info">
-              <div className="tests_stat_value" style={{ color: getGradeColor(results.accuracy) }}>
+              <div className="tests_stat_value" style={{ color: getGradeColor(results.ratingScore) }}>
                 {results.accuracy}%
               </div>
               <div className="tests_stat_label">Точность</div>
@@ -768,16 +1125,16 @@ function TestResults({ results, isPracticeMode, onBack }) {
         <div className="tests_results_grade">
           <div 
             className="tests_grade_text"
-            style={{ color: getGradeColor(results.accuracy) }}
+            style={{ color: getGradeColor(results.ratingScore) }}
           >
-            {getGradeText(results.accuracy)}
+            {getGradeText(results.ratingScore)}
           </div>
           <div className="tests_grade_description">
-            {results.accuracy >= 90 
+            {results.ratingScore >= 90 
               ? 'Превосходная работа! Вы отлично справились с тестом.'
-              : results.accuracy >= 70
+              : results.ratingScore >= 70
               ? 'Хорошая работа! Есть небольшие недочеты, но в целом результат неплохой.'
-              : results.accuracy >= 50
+              : results.ratingScore >= 50
               ? 'Неплохо, но есть над чем поработать. Рекомендуем повторить материал.'
               : 'Рекомендуем внимательно изучить материал и попробовать снова.'
             }
@@ -789,6 +1146,89 @@ function TestResults({ results, isPracticeMode, onBack }) {
             Вернуться к списку тестов
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Компонент разбора теста
+function TestReview({ test, stats, onBack }) {
+  const getAnswerText = (question, answer) => {
+    if (question.type === 'single') {
+      const selectedAnswer = question.answers.find(a => a.id === answer.selectedAnswer);
+      return selectedAnswer ? selectedAnswer.text : 'Не выбран ответ';
+    } else if (question.type === 'multiple') {
+      const selectedAnswers = question.answers.filter(a => answer.selectedAnswers?.includes(a.id));
+      return selectedAnswers.length > 0 ? selectedAnswers.map(a => a.text).join(', ') : 'Не выбраны ответы';
+    } else if (question.type === 'text') {
+      return answer.textAnswer || 'Ответ не дан';
+    }
+    return 'Неизвестный тип вопроса';
+  };
+
+  const getCorrectAnswerText = (question) => {
+    if (question.type === 'single') {
+      const correctAnswer = question.answers.find(a => a.isCorrect);
+      return correctAnswer ? correctAnswer.text : 'Правильный ответ не найден';
+    } else if (question.type === 'multiple') {
+      const correctAnswers = question.answers.filter(a => a.isCorrect);
+      return correctAnswers.length > 0 ? correctAnswers.map(a => a.text).join(', ') : 'Правильные ответы не найдены';
+    } else if (question.type === 'text') {
+      return question.correctAnswers ? question.correctAnswers.join(', ') : 'Правильный ответ не найден';
+    }
+    return 'Неизвестный тип вопроса';
+  };
+
+  return (
+    <div className="tests_review">
+      <div className="tests_review_header">
+        <button className="tests_back_btn" onClick={onBack}>← Назад</button>
+        <h2 className="tests_review_title">Разбор теста: {test.title}</h2>
+        <div className="tests_review_summary">
+          <span className="tests_review_score">Рейтинговый балл: {stats.totalPoints || 0} из 100</span>
+        </div>
+      </div>
+
+      <div className="tests_review_content">
+        {test.questions.map((question, index) => {
+          const answer = stats.answers?.find(a => a.questionId === question.questionId);
+          const isCorrect = answer?.isCorrect || false;
+          const points = answer?.points || 0;
+          
+          return (
+            <div key={question.questionId} className="tests_review_question">
+              <div className="tests_review_question_header">
+                <h3>Вопрос {index + 1}</h3>
+                <div className={`tests_review_question_status ${isCorrect ? 'correct' : 'incorrect'}`}>
+                  {isCorrect ? '✅ Правильно' : '❌ Неправильно'}
+                </div>
+                <div className="tests_review_question_points">
+                  {points} / {question.points} баллов
+                </div>
+              </div>
+              
+              <div className="tests_review_question_text">
+                {question.text}
+              </div>
+              
+              <div className="tests_review_answers">
+                <div className="tests_review_answer_section">
+                  <h4>Ваш ответ:</h4>
+                  <div className={`tests_review_answer ${isCorrect ? 'correct' : 'incorrect'}`}>
+                    {getAnswerText(question, answer)}
+                  </div>
+                </div>
+                
+                <div className="tests_review_answer_section">
+                  <h4>Правильный ответ:</h4>
+                  <div className="tests_review_correct_answer">
+                    {getCorrectAnswerText(question)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

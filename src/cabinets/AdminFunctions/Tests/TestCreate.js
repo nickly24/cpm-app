@@ -18,7 +18,7 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
     questionId: 1,
     type: 'single',
     text: '',
-    points: 5,
+    points: 1,
     answers: [
       { id: 'a', text: '', isCorrect: false, pointValue: 0 },
       { id: 'b', text: '', isCorrect: false, pointValue: 0 }
@@ -27,6 +27,21 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
   });
 
   const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [showQuestionPopup, setShowQuestionPopup] = useState(false);
+  const [directions, setDirections] = useState([]);
+
+  // Загрузка направлений
+  useEffect(() => {
+    const fetchDirections = async () => {
+      try {
+        const response = await axios.get(`${API_EXAM_URL}/directions`);
+        setDirections(response.data);
+      } catch (error) {
+        console.error('Ошибка при загрузке направлений:', error);
+      }
+    };
+    fetchDirections();
+  }, []);
 
   useEffect(() => {
     if (editingTest && (mode === 'edit' || mode === 'view')) {
@@ -77,12 +92,25 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
   };
 
   const handleAnswerChange = (answerIndex, field, value) => {
-    setCurrentQuestion(prev => ({
+    setCurrentQuestion(prev => {
+      // Для одиночного выбора: если ставим isCorrect = true, сбрасываем у других
+      if (prev.type === 'single' && field === 'isCorrect' && value === true) {
+        return {
+          ...prev,
+          answers: prev.answers.map((answer, index) => ({
+            ...answer,
+            isCorrect: index === answerIndex
+          }))
+        };
+      }
+      
+      return {
       ...prev,
       answers: prev.answers.map((answer, index) => 
         index === answerIndex ? { ...answer, [field]: value } : answer
       )
-    }));
+      };
+    });
   };
 
   const handleCorrectAnswerChange = (index, value) => {
@@ -164,7 +192,7 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       questionId: testData.questions.length + 2,
       type: 'single',
       text: '',
-      points: 5,
+      points: 1,
       answers: [
         { id: 'a', text: '', isCorrect: false, pointValue: 0 },
         { id: 'b', text: '', isCorrect: false, pointValue: 0 }
@@ -172,6 +200,22 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       correctAnswers: []
     });
     setShowQuestionForm(false);
+    setShowQuestionPopup(false);
+  };
+
+  const cancelQuestionEdit = () => {
+    setShowQuestionPopup(false);
+    setCurrentQuestion({
+      questionId: testData.questions.length + 1,
+      type: 'single',
+      text: '',
+      points: 1,
+      answers: [
+        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
+        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+      ],
+      correctAnswers: []
+    });
   };
 
   const removeQuestion = (index) => {
@@ -179,6 +223,49 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       ...prev,
       questions: prev.questions.filter((_, i) => i !== index)
     }));
+  };
+
+  // Функции для создания вопросов разных типов
+  const createSingleChoiceQuestion = () => {
+    setCurrentQuestion({
+      questionId: testData.questions.length + 1,
+      type: 'single',
+      text: '',
+      points: 1,
+      answers: [
+        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
+        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+      ],
+      correctAnswers: []
+    });
+    setShowQuestionPopup(true);
+  };
+
+  const createMultipleChoiceQuestion = () => {
+    setCurrentQuestion({
+      questionId: testData.questions.length + 1,
+      type: 'multiple',
+      text: '',
+      points: 1,
+      answers: [
+        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
+        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+      ],
+      correctAnswers: []
+    });
+    setShowQuestionPopup(true);
+  };
+
+  const createTextQuestion = () => {
+    setCurrentQuestion({
+      questionId: testData.questions.length + 1,
+      type: 'text',
+      text: '',
+      points: 1,
+      answers: [],
+      correctAnswers: ['']
+    });
+    setShowQuestionPopup(true);
   };
 
   const handleSubmit = async (e) => {
@@ -258,15 +345,21 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
 
           <div className="test_create_field">
             <label className="test_create_label">Направление:</label>
-            <input
-              type="text"
+            <select
               name="direction"
               value={testData.direction}
               onChange={handleInputChange}
               className="test_create_input"
               required
               disabled={isReadOnly}
-            />
+            >
+              <option value="">Выберите направление</option>
+              {directions.map((direction) => (
+                <option key={direction.id} value={direction.name}>
+                  {direction.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="test_create_field_row">
@@ -352,7 +445,7 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
                           correctAnswers: question.correctAnswers || []
                         };
                         setCurrentQuestion(questionToEdit);
-                        setShowQuestionForm(true);
+                        setShowQuestionPopup(true);
                       }}
                       className="test_create_edit_btn"
                     >
@@ -408,22 +501,66 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
           ))}
 
           {!isReadOnly && !showQuestionForm ? (
+            <div className="test_create_add_question_buttons">
+              <button
+                type="button"
+                onClick={createSingleChoiceQuestion}
+                className="test_create_add_question_btn single"
+              >
+                + Одиночный выбор
+              </button>
+              <button
+                type="button"
+                onClick={createMultipleChoiceQuestion}
+                className="test_create_add_question_btn multiple"
+              >
+                + Множественный выбор
+              </button>
+              <button
+                type="button"
+                onClick={createTextQuestion}
+                className="test_create_add_question_btn text"
+              >
+                + Текстовый ответ
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {!isReadOnly && (
+          <div className="test_create_actions">
             <button
-              type="button"
-              onClick={() => setShowQuestionForm(true)}
-              className="test_create_add_question_btn"
+              type="submit"
+              className="test_create_submit_btn"
+              disabled={testData.questions.length === 0}
             >
-              Добавить вопрос
+              {mode === 'edit' ? 'Сохранить изменения' : 'Создать тест'}
             </button>
-          ) : !isReadOnly && showQuestionForm ? (
-            <div className="test_create_question_form">
+          </div>
+        )}
+      </form>
+
+      {/* Pop-up для создания/редактирования вопроса */}
+      {showQuestionPopup && (
+        <div className="test_create_popup_overlay" onClick={cancelQuestionEdit}>
+          <div className="test_create_popup" onClick={(e) => e.stopPropagation()}>
+            <div className="test_create_popup_header">
               <h4 className="test_create_question_form_title">
                 {currentQuestion.questionId && testData.questions.some(q => q.questionId === currentQuestion.questionId) 
                   ? `Редактирование вопроса ${currentQuestion.questionId}` 
                   : 'Новый вопрос'
                 }
               </h4>
-              
+              <button
+                type="button"
+                onClick={cancelQuestionEdit}
+                className="test_create_popup_close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="test_create_popup_content">
               <div className="test_create_field">
                 <label className="test_create_label">Текст вопроса:</label>
                 <textarea
@@ -444,6 +581,7 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
                     value={currentQuestion.type}
                     onChange={handleQuestionInputChange}
                     className="test_create_select"
+                    disabled
                   >
                     <option value="single">Одиночный выбор</option>
                     <option value="multiple">Множественный выбор</option>
@@ -582,28 +720,17 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowQuestionForm(false)}
+                  onClick={cancelQuestionEdit}
                   className="test_create_cancel_btn"
                 >
                   Отмена
                 </button>
               </div>
             </div>
-          ) : null}
-        </div>
-
-        {!isReadOnly && (
-          <div className="test_create_actions">
-            <button
-              type="submit"
-              className="test_create_submit_btn"
-              disabled={testData.questions.length === 0}
-            >
-              {mode === 'edit' ? 'Сохранить изменения' : 'Создать тест'}
-            </button>
           </div>
-        )}
-      </form>
+        </div>
+      )}
     </div>
   );
 }
+

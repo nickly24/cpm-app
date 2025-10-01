@@ -126,6 +126,12 @@
   color: #721c24;
 }
 
+.tests_test_status.missed {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
 .tests_start_btn {
   width: 100%;
   padding: 12px 20px;
@@ -485,6 +491,26 @@
   box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
 }
 
+.tests_view_results_btn {
+  background: linear-gradient(135deg, #6f42c1, #5a32a3);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.3);
+  margin-right: 10px;
+}
+
+.tests_view_results_btn:hover {
+  background: linear-gradient(135deg, #5a32a3, #4c2a8a);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4);
+}
+
 /* Стили для результатов теста */
 .tests_results {
   max-width: 800px;
@@ -672,5 +698,555 @@
   
   .tests_grade_description {
     font-size: 1rem;
+  }
+}
+
+/* Стили для разбора теста */
+.tests_review {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.tests_review_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.tests_review_title {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.tests_review_summary {
+  text-align: right;
+}
+
+.tests_review_score {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tests_review_content {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.tests_review_question {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.tests_review_question:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.tests_review_question_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tests_review_question_header h3 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.tests_review_question_status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tests_review_question_status.correct {
+  background: #d4edda;
+  color: #155724;
+}
+
+.tests_review_question_status.incorrect {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.tests_review_question_points {
+  background: #e9ecef;
+  color: #495057;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tests_review_question_text {
+  color: #2c3e50;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.tests_review_answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.tests_review_answer_section h4 {
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tests_review_answer {
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  border: 2px solid;
+}
+
+.tests_review_answer.correct {
+  background: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.tests_review_answer.incorrect {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.tests_review_correct_answer {
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #d1ecf1;
+  border: 2px solid #bee5eb;
+  color: #0c5460;
+}
+
+/* Адаптивность для разбора теста */
+@media (max-width: 768px) {
+  .tests_review {
+    padding: 15px;
+  }
+  
+  .tests_review_header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .tests_review_question_header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .tests_review_answers {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* Табы направлений */
+.tests_directions_tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 0 4px 10px 4px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.tests_direction_tab {
+  padding: 10px 18px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tests_direction_tab:hover {
+  background: #f8f9fa;
+  color: #495057;
+  border-color: #007bff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tests_direction_tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Контент тестов */
+.tests_tests_content {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+/* Фильтры и поиск */
+.tests_filters {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.tests_search {
+  margin-bottom: 16px;
+}
+
+.tests_search_input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.tests_search_input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Фильтры по датам */
+.tests_date_filters {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tests_date_filter_group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.tests_date_label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+}
+
+.tests_date_input {
+  padding: 10px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: white;
+  color: #495057;
+}
+
+.tests_date_input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.tests_clear_filters_btn {
+  padding: 10px 16px;
+  border: 2px solid #dc3545;
+  background: white;
+  color: #dc3545;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: fit-content;
+  align-self: end;
+}
+
+.tests_clear_filters_btn:hover:not(:disabled) {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.tests_clear_filters_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tests_filter_buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tests_filter_btn {
+  padding: 10px 16px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tests_filter_btn:hover {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+.tests_filter_btn.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Обновленные карточки тестов */
+.tests_test_card_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.tests_test_type_badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tests_test_type_badge.available {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.tests_test_type_badge.upcoming {
+  background: linear-gradient(135deg, #ffc107, #fd7e14);
+  color: white;
+}
+
+.tests_test_type_badge.completed {
+  background: linear-gradient(135deg, #6f42c1, #e83e8c);
+  color: white;
+}
+
+.tests_test_type_badge.missed {
+  background: linear-gradient(135deg, #dc3545, #fd7e14);
+  color: white;
+}
+
+.tests_test_actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.tests_test_actions .tests_start_btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+.tests_test_actions .tests_view_results_btn,
+.tests_test_actions .tests_practice_btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Пагинация */
+.tests_pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  padding: 20px;
+}
+
+.tests_pagination_btn {
+  padding: 10px 16px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tests_pagination_btn:hover:not(:disabled) {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+.tests_pagination_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tests_pagination_pages {
+  display: flex;
+  gap: 4px;
+}
+
+.tests_pagination_page {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tests_pagination_page:hover {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+.tests_pagination_page.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Адаптивность для новых элементов */
+@media (max-width: 768px) {
+  .tests_directions_tabs {
+    margin-bottom: 16px;
+    padding: 0 2px 8px 2px;
+    gap: 6px;
+  }
+  
+  .tests_direction_tab {
+    padding: 8px 14px;
+    font-size: 13px;
+    flex: 1 1 auto;
+    text-align: center;
+    min-width: fit-content;
+  }
+  
+  .tests_tests_content {
+    border-radius: 8px;
+  }
+  
+  .tests_filters {
+    padding: 15px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+  
+  .tests_date_filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .tests_date_filter_group {
+    min-width: auto;
+  }
+  
+  .tests_clear_filters_btn {
+    align-self: stretch;
+    text-align: center;
+  }
+  
+  .tests_filter_buttons {
+    flex-direction: column;
+  }
+  
+  .tests_filter_btn {
+    text-align: center;
+  }
+  
+  .tests_test_card_header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .tests_test_actions {
+    flex-direction: column;
+  }
+  
+  .tests_test_actions .tests_start_btn,
+  .tests_test_actions .tests_view_results_btn,
+  .tests_test_actions .tests_practice_btn {
+    min-width: auto;
+  }
+  
+  .tests_pagination {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tests_pagination_pages {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
