@@ -4,6 +4,7 @@ import GroupsFunc from './AdminFunctions/Groups/GroupsFunc';
 import Attendance from './AdminFunctions/Attendance/Attendance';
 import UsersByRole from './AdminFunctions/Users/UsersByRole';
 import TestsManagement from './AdminFunctions/Tests/TestsManagement';
+import TestResultsView from './AdminFunctions/Tests/TestResultsView';
 import { ScanAttendance } from './AdminFunctions/ScanAttedance/ScanAttendance';
 import Exams from './AdminFunctions/Exams/Exams'; // Добавляем импорт нового компонента
 
@@ -39,6 +40,8 @@ const AdminCabinet = () => {
         return <Attendance />;
       case 'tests':
         return <TestsManagement />;
+      case 'test-results':
+        return <TestResultsView />;
       case 'scan':
         return <ScanAttendance />;
       case 'exams': // Добавляем новый case для экзаменов
@@ -84,6 +87,14 @@ const AdminCabinet = () => {
             >
               <h3>Тесты</h3>
               <p>Управление тестами студентов</p>
+            </div>
+            
+            <div 
+              className="feature-card" 
+              onClick={() => setCurrentView('test-results')}
+            >
+              <h3>Результаты тестов</h3>
+              <p>Просмотр результатов прохождения тестов</p>
             </div>
             
             <div 

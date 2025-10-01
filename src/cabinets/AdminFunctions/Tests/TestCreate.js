@@ -20,8 +20,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
     text: '',
     points: 1,
     answers: [
-      { id: 'a', text: '', isCorrect: false, pointValue: 0 },
-      { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+      { id: 'a', text: '', isCorrect: false },
+      { id: 'b', text: '', isCorrect: false }
     ],
     correctAnswers: []
   });
@@ -49,13 +49,13 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       console.log('isActive из сервера:', editingTest.isActive);
       console.log('Вопросы из сервера:', editingTest.questions);
       
-      // Обрабатываем вопросы, сохраняя pointValue
+      // Обрабатываем вопросы, убирая pointValue для множественного выбора
       const processedQuestions = (editingTest.questions || []).map(question => ({
         ...question,
-        answers: question.answers ? question.answers.map(answer => ({
-          ...answer,
-          pointValue: answer.pointValue || 0
-        })) : [],
+        answers: question.answers ? question.answers.map(answer => {
+          const { pointValue, ...answerWithoutPointValue } = answer;
+          return answerWithoutPointValue;
+        }) : [],
         correctAnswers: question.correctAnswers || []
       }));
       
@@ -126,7 +126,7 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
     const newId = String.fromCharCode(97 + currentQuestion.answers.length);
     setCurrentQuestion(prev => ({
       ...prev,
-      answers: [...prev.answers, { id: newId, text: '', isCorrect: false, pointValue: 0 }]
+      answers: [...prev.answers, { id: newId, text: '', isCorrect: false }]
     }));
   };
 
@@ -162,12 +162,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       questionToAdd.correctAnswers = [];
     }
 
-    // Для множественного выбора рассчитываем общие баллы
-    if (questionToAdd.type === 'multiple') {
-      questionToAdd.points = questionToAdd.answers
-        .filter(answer => answer.isCorrect)
-        .reduce((sum, answer) => sum + (answer.pointValue || 0), 0);
-    }
+    // Для множественного выбора используем фиксированные баллы за весь вопрос
+    // (не рассчитываем из индивидуальных баллов ответов)
 
     // Проверяем, редактируем ли существующий вопрос
     const existingQuestionIndex = testData.questions.findIndex(q => q.questionId === questionToAdd.questionId);
@@ -194,8 +190,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       text: '',
       points: 1,
       answers: [
-        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
-        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+        { id: 'a', text: '', isCorrect: false },
+        { id: 'b', text: '', isCorrect: false }
       ],
       correctAnswers: []
     });
@@ -211,8 +207,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       text: '',
       points: 1,
       answers: [
-        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
-        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+        { id: 'a', text: '', isCorrect: false },
+        { id: 'b', text: '', isCorrect: false }
       ],
       correctAnswers: []
     });
@@ -233,8 +229,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       text: '',
       points: 1,
       answers: [
-        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
-        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+        { id: 'a', text: '', isCorrect: false },
+        { id: 'b', text: '', isCorrect: false }
       ],
       correctAnswers: []
     });
@@ -248,8 +244,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
       text: '',
       points: 1,
       answers: [
-        { id: 'a', text: '', isCorrect: false, pointValue: 0 },
-        { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+        { id: 'a', text: '', isCorrect: false },
+        { id: 'b', text: '', isCorrect: false }
       ],
       correctAnswers: []
     });
@@ -431,16 +427,16 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
                     <button
                       type="button"
                       onClick={() => {
-                        // Правильно копируем все поля вопроса, включая pointValue
+                        // Правильно копируем все поля вопроса, убирая pointValue
                         const questionToEdit = {
                           ...question,
                           questionId: question.questionId || index + 1,
-                          answers: question.answers ? question.answers.map(answer => ({
-                            ...answer,
-                            pointValue: answer.pointValue || 0
-                          })) : [
-                            { id: 'a', text: '', isCorrect: false, pointValue: 0 },
-                            { id: 'b', text: '', isCorrect: false, pointValue: 0 }
+                          answers: question.answers ? question.answers.map(answer => {
+                            const { pointValue, ...answerWithoutPointValue } = answer;
+                            return answerWithoutPointValue;
+                          }) : [
+                            { id: 'a', text: '', isCorrect: false },
+                            { id: 'b', text: '', isCorrect: false }
                           ],
                           correctAnswers: question.correctAnswers || []
                         };
@@ -478,9 +474,6 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
                         <span className="test_create_answer_text">{answer.text}</span>
                         {answer.isCorrect && (
                           <span className="test_create_answer_correct">✓</span>
-                        )}
-                        {question.type === 'multiple' && answer.isCorrect && answer.pointValue && (
-                          <span className="test_create_answer_points">({answer.pointValue} баллов)</span>
                         )}
                       </div>
                     ))}
@@ -606,14 +599,18 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
 
                 {currentQuestion.type === 'multiple' && (
                   <div className="test_create_field">
-                    <label className="test_create_label">Общие баллы:</label>
-                    <div className="test_create_calculated_points">
-                      {currentQuestion.answers
-                        .filter(answer => answer.isCorrect)
-                        .reduce((sum, answer) => sum + (answer.pointValue || 0), 0)}
-                    </div>
+                    <label className="test_create_label">Баллы за вопрос:</label>
+                    <input
+                      type="number"
+                      name="points"
+                      value={currentQuestion.points}
+                      onChange={handleQuestionInputChange}
+                      className="test_create_input"
+                      min="1"
+                      required
+                    />
                     <small className="test_create_points_note">
-                      Рассчитывается автоматически как сумма баллов за правильные ответы
+                      Баллы начисляются только при полном совпадении с правильными ответами
                     </small>
                   </div>
                 )}
@@ -642,19 +639,6 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
                           />
                           Правильный
                         </label>
-                        {currentQuestion.type === 'multiple' && answer.isCorrect && (
-                          <div className="test_create_points_input">
-                            <label className="test_create_points_label">Баллы:</label>
-                            <input
-                              type="number"
-                              value={answer.pointValue}
-                              onChange={(e) => handleAnswerChange(index, 'pointValue', parseInt(e.target.value) || 0)}
-                              className="test_create_points_field"
-                              min="0"
-                              placeholder="0"
-                            />
-                          </div>
-                        )}
                         {currentQuestion.answers.length > 2 && (
                           <button
                             type="button"

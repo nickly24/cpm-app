@@ -851,8 +851,9 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
         const selectedAnswers = answer.selectedAnswers || [];
         
         // СТРОГАЯ ПРОВЕРКА для множественного выбора:
-        // 1. Выбраны ВСЕ правильные ответы
+        // 1. Выбраны ВСЕ правильные ответы (ни одного не пропущено)
         // 2. НЕ выбраны НИ ОДИН неправильный ответ
+        // 3. Количество выбранных ответов равно количеству правильных
         // Если хотя бы одно условие не выполнено - 0 баллов
         const allCorrectSelected = correctAnswers.length === selectedAnswers.length && 
                                   correctAnswers.every(id => selectedAnswers.includes(id));
