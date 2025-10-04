@@ -1250,3 +1250,129 @@
     justify-content: center;
   }
 }
+
+/* Стили для защиты от копирования */
+.tests_question_text {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: default;
+}
+
+/* Предупреждение о копировании */
+.tests_copy_warning {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 12px;
+  padding: 20px;
+  animation: tests_copy_warning_show 0.3s ease-out;
+}
+
+.tests_copy_warning_content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.tests_copy_warning_icon {
+  font-size: 1.5rem;
+}
+
+@keyframes tests_copy_warning_show {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Стили для асинхронной отправки */
+.tests_complete_section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.tests_loading_spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: tests_spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes tests_spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tests_complete_btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.tests_submit_error {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  max-width: 400px;
+}
+
+.tests_submit_error p {
+  color: #721c24;
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+}
+
+.tests_retry_btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.tests_retry_btn:hover {
+  background: #c82333;
+}
+
+/* Дополнительные мобильные стили для новых элементов */
+@media (max-width: 768px) {
+  .tests_copy_warning {
+    left: 10px;
+    right: 10px;
+    transform: translateY(-50%);
+    max-width: calc(100vw - 20px);
+  }
+
+  .tests_copy_warning_content {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .tests_submit_error {
+    max-width: 100%;
+    margin: 0 10px;
+  }
+}

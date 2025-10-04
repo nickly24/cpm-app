@@ -191,7 +191,15 @@ export default function Tests({ onBack }) {
       const response = await fetch(`${API_EXAM_URL}/test/${testId}`);
       if (!response.ok) throw new Error('Тест не найден');
       const testData = await response.json();
-      setCurrentTest(testData);
+      
+      // Перемешиваем вопросы в случайном порядке
+      const shuffledQuestions = [...testData.questions].sort(() => Math.random() - 0.5);
+      const shuffledTestData = {
+        ...testData,
+        questions: shuffledQuestions
+      };
+      
+      setCurrentTest(shuffledTestData);
       setIsPracticeMode(practiceMode);
       
       // Создаем новую сессию теста
@@ -751,6 +759,9 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
   const [answers, setAnswers] = useState(session.answers || []);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showCopyWarning, setShowCopyWarning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     // Восстанавливаем сессию из localStorage
@@ -778,6 +789,20 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
     return () => clearInterval(timer);
   }, [session, isCompleted]);
+
+  // Функция для обработки попыток копирования
+  const handleCopyAttempt = (e) => {
+    e.preventDefault();
+    setShowCopyWarning(true);
+    setTimeout(() => setShowCopyWarning(false), 3000);
+  };
+
+  // Функция для обработки выделения текста
+  const handleTextSelection = (e) => {
+    e.preventDefault();
+    setShowCopyWarning(true);
+    setTimeout(() => setShowCopyWarning(false), 3000);
+  };
 
   const handleAnswer = (questionId, answer, questionType) => {
     const newAnswers = [...answers];
@@ -829,9 +854,10 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
   };
 
   const handleCompleteTest = async () => {
-    if (isCompleted) return;
+    if (isCompleted || isSubmitting) return;
     
-    setIsCompleted(true);
+    setIsSubmitting(true);
+    setSubmitError(null);
     
     // Рассчитываем баллы на клиенте
     const calculatedAnswers = answers.map(answer => {
@@ -918,19 +944,33 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
         if (response.ok) {
           const result = await response.json();
           console.log('Тест завершен, ID сессии:', result.id);
+          setIsCompleted(true);
+          onComplete(results);
+        } else {
+          throw new Error('Ошибка сервера при отправке результатов');
         }
       } catch (error) {
         console.error('Ошибка отправки результатов:', error);
+        setSubmitError('Не удалось отправить результаты. Проверьте подключение к интернету.');
+        setIsSubmitting(false);
+        return; // Не завершаем тест при ошибке
       }
     } else {
       console.log('Режим тренировки - результаты не отправлены на сервер');
+      setIsCompleted(true);
+      onComplete(results);
     }
 
-    // Очищаем localStorage
-    localStorage.removeItem('testSession');
-    
-    // Показываем результаты
-    onComplete(results);
+    // Очищаем localStorage только при успешном завершении
+    if (isCompleted) {
+      localStorage.removeItem('testSession');
+    }
+  };
+
+  // Функция для повторной попытки отправки
+  const retrySubmission = () => {
+    setSubmitError(null);
+    handleCompleteTest();
   };
 
   const formatTime = (seconds) => {
@@ -971,7 +1011,15 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
       {currentQuestion && (
         <div className="tests_question">
-          <h3 className="tests_question_text">{currentQuestion.text}</h3>
+          <h3 
+            className="tests_question_text"
+            onCopy={handleCopyAttempt}
+            onSelectStart={handleTextSelection}
+            onContextMenu={handleCopyAttempt}
+            style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+          >
+            {currentQuestion.text}
+          </h3>
           <p className="tests_question_points">Баллов: {parseInt(currentQuestion.points)}</p>
           
           <div className="tests_question_answers">
@@ -1037,12 +1085,33 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
         </button>
         
         {currentQuestionIndex === test.questions.length - 1 ? (
-          <button 
-            className="tests_complete_btn"
-            onClick={handleCompleteTest}
-          >
-            Завершить тест
-          </button>
+          <div className="tests_complete_section">
+            <button
+              className="tests_complete_btn"
+              onClick={handleCompleteTest}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="tests_loading_spinner"></span>
+                  Отправка...
+                </>
+              ) : (
+                'Завершить тест'
+              )}
+            </button>
+            {submitError && (
+              <div className="tests_submit_error">
+                <p>{submitError}</p>
+                <button 
+                  className="tests_retry_btn"
+                  onClick={retrySubmission}
+                >
+                  Попробовать еще раз
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <button 
             className="tests_nav_btn"
@@ -1052,6 +1121,16 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           </button>
         )}
       </div>
+
+      {/* Предупреждение о копировании */}
+      {showCopyWarning && (
+        <div className="tests_copy_warning">
+          <div className="tests_copy_warning_content">
+            <span className="tests_copy_warning_icon">⚠️</span>
+            <p>Копирование текста вопросов запрещено!</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
