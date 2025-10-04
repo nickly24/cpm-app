@@ -123,7 +123,7 @@ const StudentCabinet = () => {
             >
               Тесты
             </button>
-            {/*<button 
+            <button 
               className={`nav-button ${activeComponent === 'exams' ? 'active' : ''}`}
               onClick={() => {
                 setActiveComponent('exams');
@@ -149,7 +149,7 @@ const StudentCabinet = () => {
               }}
             >
               Тренировка
-            </button>*/}
+            </button>
           </nav>
         </aside>
 

@@ -2,10 +2,12 @@
 .tests_directions,
 .tests_tests,
 .tests_test_component {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2.5vw;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
 }
 
 .tests_title {
@@ -656,10 +658,20 @@
   .tests_tests,
   .tests_test_component,
   .tests_results {
-    padding: 15px;
+    padding: 2.5vw;
     width: 100%;
-    max-width: none;
+    max-width: 100%;
     margin: 0;
+  }
+
+  .tests_header {
+    padding: 0;
+    margin-bottom: 2.5vw;
+  }
+
+  .tests_title {
+    padding: 0;
+    margin-bottom: 2.5vw;
   }
   
   .tests_directions_list,
@@ -667,13 +679,14 @@
     grid-template-columns: 1fr;
     width: 100%;
     margin: 0;
-    padding: 0 10px;
+    padding: 0;
   }
 
   .tests_direction_card {
-    padding: 20px;
+    padding: 2.5vw;
     width: 100%;
-    margin: 0 0 15px 0;
+    margin: 0 0 2.5vw 0;
+    box-sizing: border-box;
   }
 
   .tests_direction_card h3 {
@@ -686,7 +699,8 @@
 
   .tests_test_card {
     width: 100%;
-    margin: 0 0 15px 0;
+    margin: 0 0 2.5vw 0;
+    box-sizing: border-box;
   }
   
   .tests_test_header {
@@ -1212,9 +1226,9 @@
 /* Адаптивность для новых элементов */
 @media (max-width: 768px) {
   .tests_directions_tabs {
-    margin-bottom: 16px;
-    padding: 0 10px 8px 10px;
-    gap: 6px;
+    margin-bottom: 2.5vw;
+    padding: 0 0 2.5vw 0;
+    gap: 1.5vw;
     width: 100%;
   }
   
@@ -1234,14 +1248,15 @@
     border-radius: 8px;
     width: 100%;
     margin: 0;
-    padding: 0 10px;
+    padding: 0;
   }
   
   .tests_filters {
-    padding: 15px;
-    margin: 0 0 16px 0;
+    padding: 2.5vw;
+    margin: 0 0 2.5vw 0;
     border-radius: 8px;
     width: 100%;
+    box-sizing: border-box;
   }
   
   .tests_date_filters {
@@ -1402,10 +1417,10 @@
 /* Дополнительные мобильные стили для новых элементов */
 @media (max-width: 768px) {
   .tests_copy_warning {
-    left: 10px;
-    right: 10px;
+    left: 2.5vw;
+    right: 2.5vw;
     transform: translateY(-50%);
-    max-width: calc(100vw - 20px);
+    max-width: calc(100vw - 5vw);
   }
 
   .tests_copy_warning_content {
@@ -1415,6 +1430,6 @@
 
   .tests_submit_error {
     max-width: 100%;
-    margin: 0 10px;
+    margin: 0;
   }
 }

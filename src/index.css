@@ -6,9 +6,19 @@ body{
 
 /* Стили для кабинета */
 .cabinet {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2.5vw;
+}
+
+/* Мобильные стили для кабинета */
+@media (max-width: 768px) {
+  .cabinet {
+    padding: 2.5vw;
+    max-width: 100%;
+    margin: 0;
+  }
 }
 
 .controls{
@@ -262,9 +272,19 @@ body{
 
 /* Student Cabinet Styles */
 .student-cabinet {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2.5vw;
+}
+
+/* Мобильные стили для студенческого кабинета */
+@media (max-width: 768px) {
+  .student-cabinet {
+    padding: 2.5vw;
+    max-width: 100%;
+    margin: 0;
+  }
 }
 
 .cabinet-header {
@@ -561,9 +581,19 @@ body{
 
 /* Admin Cabinet Styles */
 .admin-cabinet {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2.5vw;
+}
+
+/* Мобильные стили для админского кабинета */
+@media (max-width: 768px) {
+  .admin-cabinet {
+    padding: 2.5vw;
+    max-width: 100%;
+    margin: 0;
+  }
 }
 
 .cabinet-header {
