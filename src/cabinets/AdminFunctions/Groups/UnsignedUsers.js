@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../Config';
+import '../AdminFunctions.css';
+
 const UnsignedUsers = ({ refreshFlag, onUpdate }) => {
   const [unassignedData, setUnassignedData] = useState({
     proctors: [],
@@ -115,99 +117,198 @@ const UnsignedUsers = ({ refreshFlag, onUpdate }) => {
     }
   };
 
-  if (loading) return <div className="loading">Загрузка данных...</div>;
-  if (error) return <div className="error">{error}</div>;
+  const totalUnassigned = unassignedData.proctors.length + unassignedData.students.length;
+
+  if (loading) {
+    return (
+      <div className="loading-container" style={{ marginTop: '40px' }}>
+        <div className="spinner"></div>
+        <p className="loading-text">Загрузка непривязанных пользователей...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="empty-state" style={{ marginTop: '40px' }}>
+        <div className="empty-icon">⚠️</div>
+        <h3 className="empty-title">Ошибка загрузки</h3>
+        <p className="empty-text">{error}</p>
+      </div>
+    );
+  }
+
+  if (totalUnassigned === 0) {
+    return (
+      <div className="empty-state" style={{ marginTop: '40px' }}>
+        <div className="empty-icon">✅</div>
+        <h3 className="empty-title">Все пользователи привязаны</h3>
+        <p className="empty-text">Нет непривязанных прокторов или студентов</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="unsigned-users-container">
-      <h2>Непривязанные пользователи</h2>
-      
-      <div className="users-cards">
-        <div className="user-card proctors-card">
-          <h3>Прокторы без группы</h3>
-          {unassignedData.proctors.length > 0 ? (
-            <ul className="users-list">
-              {unassignedData.proctors.map(proctor => (
-                <li key={proctor.proctor_id} className="user-item">
-                  <div className="user-info">
-                    <span className="user-name">{proctor.full_name}</span>
-                    <span className="user-id">ID: {proctor.proctor_id}</span>
-                  </div>
-                  <div className="assign-controls">
-                    <select
-                      className="group-select"
-                      value={selectedGroups[`proctor_${proctor.proctor_id}`] || ''}
-                      onChange={(e) => handleGroupChange(proctor.proctor_id, 'proctor', e.target.value)}
-                    >
-                      <option value="" disabled>Выберите группу</option>
-                      {groups.map(group => (
-                        <option key={group.group_id} value={group.group_id}>
-                          {group.group_name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleAssignProctor(proctor.proctor_id)}
-                      className="assign-button"
-                      disabled={processingAssign.proctors[proctor.proctor_id]}
-                    >
-                      {processingAssign.proctors[proctor.proctor_id] ? (
-                        <span className="spinner"></span>
-                      ) : (
-                        'Назначить'
-                      )}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="no-users">Все прокторы привязаны к группам</p>
-          )}
-        </div>
+    <div className="admin-section" style={{ marginTop: '40px' }}>
+      {/* Header */}
+      <div className="section-header">
+        <h2 className="section-title">⚠️ Непривязанные пользователи</h2>
+        <p className="section-subtitle">Назначьте группы пользователям без привязки</p>
+      </div>
 
-        <div className="user-card students-card">
-          <h3>Студенты без группы</h3>
-          {unassignedData.students.length > 0 ? (
-            <ul className="users-list">
-              {unassignedData.students.map(student => (
-                <li key={student.student_id} className="user-item">
-                  <div className="user-info">
-                    <span className="user-name">{student.full_name}</span>
-                    <span className="user-id">ID: {student.student_id}</span>
-                  </div>
-                  <div className="assign-controls">
-                    <select
-                      className="group-select"
-                      value={selectedGroups[`student_${student.student_id}`] || ''}
-                      onChange={(e) => handleGroupChange(student.student_id, 'student', e.target.value)}
-                    >
-                      <option value="" disabled>Выберите группу</option>
-                      {groups.map(group => (
-                        <option key={group.group_id} value={group.group_id}>
-                          {group.group_name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleAssignStudent(student.student_id)}
-                      className="assign-button"
-                      disabled={processingAssign.students[student.student_id]}
-                    >
-                      {processingAssign.students[student.student_id] ? (
-                        <span className="spinner"></span>
-                      ) : (
-                        'Назначить'
-                      )}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="no-users">Все студенты привязаны к группам</p>
-          )}
+      {/* Stats */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <p className="stat-label">Всего непривязанных</p>
+          <h3 className="stat-value">{totalUnassigned}</h3>
         </div>
+        <div className="stat-card">
+          <p className="stat-label">Прокторов</p>
+          <h3 className="stat-value">{unassignedData.proctors.length}</h3>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">Студентов</p>
+          <h3 className="stat-value">{unassignedData.students.length}</h3>
+        </div>
+      </div>
+
+      {/* Users Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+        {/* Proctors Card */}
+        {unassignedData.proctors.length > 0 && (
+          <div className="item-card">
+            <div className="card-header">
+              <div className="card-avatar" style={{ background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)' }}>
+                👨‍🏫
+              </div>
+              <div className="card-info">
+                <h3 className="card-title">Прокторы без группы</h3>
+                <p className="card-subtitle">{unassignedData.proctors.length} человек</p>
+              </div>
+            </div>
+
+            <div className="card-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {unassignedData.proctors.map(proctor => (
+                  <div key={proctor.proctor_id} style={{
+                    padding: '12px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '2px' }}>
+                        {proctor.full_name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#7f8c8d' }}>
+                        ID: {proctor.proctor_id}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <select
+                        value={selectedGroups[`proctor_${proctor.proctor_id}`] || ''}
+                        onChange={(e) => handleGroupChange(proctor.proctor_id, 'proctor', e.target.value)}
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          border: '2px solid #e8ecef',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontFamily: 'Montserrat, sans-serif',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="" disabled>Выберите группу</option>
+                        {groups.map(group => (
+                          <option key={group.group_id} value={group.group_id}>
+                            {group.group_name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleAssignProctor(proctor.proctor_id)}
+                        className="btn btn-success btn-sm"
+                        disabled={processingAssign.proctors[proctor.proctor_id]}
+                      >
+                        {processingAssign.proctors[proctor.proctor_id] ? '🔄' : '✓'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Students Card */}
+        {unassignedData.students.length > 0 && (
+          <div className="item-card">
+            <div className="card-header">
+              <div className="card-avatar" style={{ background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' }}>
+                👨‍🎓
+              </div>
+              <div className="card-info">
+                <h3 className="card-title">Студенты без группы</h3>
+                <p className="card-subtitle">{unassignedData.students.length} человек</p>
+              </div>
+            </div>
+
+            <div className="card-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto' }}>
+                {unassignedData.students.map(student => (
+                  <div key={student.student_id} style={{
+                    padding: '12px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '2px' }}>
+                        {student.full_name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#7f8c8d' }}>
+                        ID: {student.student_id}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <select
+                        value={selectedGroups[`student_${student.student_id}`] || ''}
+                        onChange={(e) => handleGroupChange(student.student_id, 'student', e.target.value)}
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          border: '2px solid #e8ecef',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontFamily: 'Montserrat, sans-serif',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="" disabled>Выберите группу</option>
+                        {groups.map(group => (
+                          <option key={group.group_id} value={group.group_id}>
+                            {group.group_name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleAssignStudent(student.student_id)}
+                        className="btn btn-success btn-sm"
+                        disabled={processingAssign.students[student.student_id]}
+                      >
+                        {processingAssign.students[student.student_id] ? '🔄' : '✓'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,62 +1,69 @@
 import { useState } from 'react';
+import '../AdminFunctions.css';
 
-const UserCard = ({ user, role, onDelete }) => {
+const UserCard = ({ user, role, roleIcon, onDelete }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await onDelete(user.id);
-    } finally {
-      setIsDeleting(false);
+    if (window.confirm(`Вы уверены, что хотите удалить пользователя "${user.full_name}"?`)) {
+      setIsDeleting(true);
+      try {
+        await onDelete(user.id);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
+
+  // Получаем первую букву имени для аватара
+  const initial = user.full_name?.charAt(0).toUpperCase() || '?';
+
+  // Определяем цвет в зависимости от роли
+  const getRoleBadgeColor = () => {
+    switch(role) {
+      case 'student': return '#3498db';
+      case 'proctor': return '#2ecc71';
+      case 'examinator': return '#9b59b6';
+      case 'supervisor': return '#e67e22';
+      default: return '#95a5a6';
     }
   };
 
   return (
-    <div className="user-card">
-      <h4>{user.full_name}</h4>
-   
-      
-      <button 
-        onClick={handleDelete} 
-        disabled={isDeleting}
-        className="delete-button"
-      >
-        {isDeleting ? 'Удаление...' : 'Удалить'}
-      </button>
-      
-      <style jsx>{`
-        .user-card {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 15px;
-          margin-bottom: 10px;
-          background-color: #f9f9f9;
-          position: relative;
-        }
-        h4 {
-          margin-top: 0;
-          color: #333;
-        }
-        .delete-button {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          padding: 5px 10px;
-          background-color: #ff4444;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .delete-button:hover {
-          background-color: #cc0000;
-        }
-        .delete-button:disabled {
-          background-color: #ff9999;
-          cursor: not-allowed;
-        }
-      `}</style>
+    <div className="item-card">
+      <div className="card-header">
+        <div className="card-avatar">{initial}</div>
+        <div className="card-info">
+          <h3 className="card-title">{user.full_name}</h3>
+          <p className="card-subtitle">ID: {user.id}</p>
+        </div>
+      </div>
+
+      <div className="card-body">
+        <div className="card-meta">
+          <span className="meta-badge" style={{ background: getRoleBadgeColor() + '20', color: getRoleBadgeColor() }}>
+            {roleIcon} {role === 'student' ? 'Студент' : 
+                      role === 'proctor' ? 'Проктор' : 
+                      role === 'examinator' ? 'Экзаменатор' : 'Супервизор'}
+          </span>
+          {user.group_id && (
+            <span className="meta-badge">
+              🏫 Группа {user.group_id}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="card-actions">
+        <button 
+          onClick={handleDelete} 
+          disabled={isDeleting}
+          className="btn btn-danger btn-sm"
+          style={{ width: '100%' }}
+        >
+          {isDeleting ? '🔄 Удаление...' : '🗑️ Удалить'}
+        </button>
+      </div>
     </div>
   );
 };

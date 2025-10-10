@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../Config';
+import '../AdminFunctions.css';
 
 const HomeworkAdd = ({ onHomeworkAdded }) => {
   const [homeworkName, setHomeworkName] = useState('');
@@ -118,61 +119,174 @@ const HomeworkAdd = ({ onHomeworkAdded }) => {
   };
 
   return (
-    <div className="homework-add-container">
-      <h2>Добавить новое задание</h2>
-      
-      <form onSubmit={handleSubmit} className="homework-form">
-        <div className="form-group">
-          <label htmlFor="homeworkName">Название задания:</label>
-          <input
-            type="text"
-            id="homeworkName"
-            value={homeworkName}
-            onChange={(e) => setHomeworkName(e.target.value)}
-            placeholder="Введите название задания"
-            className="form-input"
-            required
-          />
+    <div className="item-card">
+      <div className="card-header">
+        <div className="card-avatar" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          ✏️
         </div>
+        <div className="card-info">
+          <h3 className="card-title">Создание нового задания</h3>
+          <p className="card-subtitle">Заполните форму для добавления ДЗ</p>
+        </div>
+      </div>
 
-        <div className="form-group">
-          <label htmlFor="homeworkType">Тип задания:</label>
-          <select
-            id="homeworkType"
-            value={homeworkType}
-            onChange={(e) => setHomeworkType(e.target.value)}
-            className="form-select"
-            required
+      <div className="card-body">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label 
+              htmlFor="homeworkName"
+              style={{ 
+                display: 'block', 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: '#4a5568',
+                marginBottom: '8px' 
+              }}
+            >
+              📚 Название задания
+            </label>
+            <input
+              type="text"
+              id="homeworkName"
+              value={homeworkName}
+              onChange={(e) => setHomeworkName(e.target.value)}
+              placeholder="Введите название задания"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e8ecef',
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontFamily: 'Montserrat, sans-serif',
+                transition: 'all 0.3s ease',
+                background: '#f8f9fa'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#667eea';
+                e.target.style.background = 'white';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e8ecef';
+                e.target.style.background = '#f8f9fa';
+              }}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label 
+                htmlFor="homeworkType"
+                style={{ 
+                  display: 'block', 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  color: '#4a5568',
+                  marginBottom: '8px' 
+                }}
+              >
+                🏷️ Тип задания
+              </label>
+              <select
+                id="homeworkType"
+                value={homeworkType}
+                onChange={(e) => setHomeworkType(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '2px solid #e8ecef',
+                  borderRadius: '8px',
+                  fontSize: '15px',
+                  fontFamily: 'Montserrat, sans-serif',
+                  background: '#f8f9fa',
+                  cursor: 'pointer'
+                }}
+                required
+              >
+                <option value="ДЗНВ">ДЗНВ</option>
+                <option value="ОВ">ОВ</option>
+              </select>
+            </div>
+
+            <div>
+              <label 
+                htmlFor="deadline"
+                style={{ 
+                  display: 'block', 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  color: '#4a5568',
+                  marginBottom: '8px' 
+                }}
+              >
+                📅 Дедлайн (необязательно)
+              </label>
+              <input
+                type="text"
+                id="deadline"
+                value={deadline}
+                onChange={handleDateChange}
+                placeholder="дд.мм.гггг"
+                maxLength={10}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '2px solid #e8ecef',
+                  borderRadius: '8px',
+                  fontSize: '15px',
+                  fontFamily: 'Montserrat, sans-serif',
+                  background: '#f8f9fa'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#667eea';
+                  e.target.style.background = 'white';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e8ecef';
+                  e.target.style.background = '#f8f9fa';
+                }}
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="btn btn-primary"
+            style={{ marginTop: '8px' }}
           >
-            <option value="ДЗНВ">ДЗНВ</option>
-            <option value="ОВ">ОВ</option>
-          </select>
-        </div>
+            {isSubmitting ? '🔄 Добавление...' : '✓ Добавить задание'}
+          </button>
+        </form>
 
-        <div className="form-group">
-          <label htmlFor="deadline">Дедлайн (необязательно):</label>
-          <input
-            type="text"
-            id="deadline"
-            value={deadline}
-            onChange={handleDateChange}
-            placeholder="дд.мм.гггг"
-            className="form-input"
-            maxLength={10}
-          />
-        </div>
-
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="submit-button"
-        >
-          {isSubmitting ? 'Добавление...' : 'Добавить задание'}
-        </button>
-      </form>
-
-      {error && <div className="error-message">{error}</div>}
-      {successMessage && <div className="success-message">{successMessage}</div>}
+        {error && (
+          <div style={{
+            marginTop: '16px',
+            padding: '12px 16px',
+            background: '#fee',
+            borderLeft: '4px solid #e74c3c',
+            borderRadius: '6px',
+            color: '#c0392b',
+            fontSize: '14px'
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+        
+        {successMessage && (
+          <div style={{
+            marginTop: '16px',
+            padding: '12px 16px',
+            background: '#d4edda',
+            borderLeft: '4px solid #2ecc71',
+            borderRadius: '6px',
+            color: '#27ae60',
+            fontSize: '14px'
+          }}>
+            ✓ {successMessage}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
