@@ -1,22 +1,32 @@
 import { useState } from 'react';
+import StudentEditModal from './StudentEditModal';
 import '../AdminFunctions.css';
 
-const UserCard = ({ user, role, roleIcon, onDelete }) => {
+const UserCard = ({ user, role, roleIcon, onDelete, onUpdate }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user);
 
   const handleDelete = async () => {
-    if (window.confirm(`Вы уверены, что хотите удалить пользователя "${user.full_name}"?`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить пользователя "${currentUser.full_name}"?`)) {
       setIsDeleting(true);
       try {
-        await onDelete(user.id);
+        await onDelete(currentUser.id);
       } finally {
         setIsDeleting(false);
       }
     }
   };
 
+  const handleEditSuccess = (updatedStudent) => {
+    setCurrentUser(updatedStudent);
+    if (onUpdate) {
+      onUpdate(updatedStudent);
+    }
+  };
+
   // Получаем первую букву имени для аватара
-  const initial = user.full_name?.charAt(0).toUpperCase() || '?';
+  const initial = currentUser.full_name?.charAt(0).toUpperCase() || '?';
 
   // Определяем цвет в зависимости от роли
   const getRoleBadgeColor = () => {
@@ -30,41 +40,70 @@ const UserCard = ({ user, role, roleIcon, onDelete }) => {
   };
 
   return (
-    <div className="item-card">
-      <div className="card-header">
-        <div className="card-avatar">{initial}</div>
-        <div className="card-info">
-          <h3 className="card-title">{user.full_name}</h3>
-          <p className="card-subtitle">ID: {user.id}</p>
+    <>
+      <div className="item-card">
+        <div className="card-header">
+          <div className="card-avatar">{initial}</div>
+          <div className="card-info">
+            <h3 className="card-title">{currentUser.full_name}</h3>
+            <p className="card-subtitle">ID: {currentUser.id}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="card-body">
-        <div className="card-meta">
-          <span className="meta-badge" style={{ background: getRoleBadgeColor() + '20', color: getRoleBadgeColor() }}>
-            {roleIcon} {role === 'student' ? 'Студент' : 
-                      role === 'proctor' ? 'Проктор' : 
-                      role === 'examinator' ? 'Экзаменатор' : 'Супервизор'}
-          </span>
-          {user.group_id && (
-            <span className="meta-badge">
-              🏫 Группа {user.group_id}
+        <div className="card-body">
+          <div className="card-meta">
+            <span className="meta-badge" style={{ background: getRoleBadgeColor() + '20', color: getRoleBadgeColor() }}>
+              {roleIcon} {role === 'student' ? 'Студент' : 
+                        role === 'proctor' ? 'Проктор' : 
+                        role === 'examinator' ? 'Экзаменатор' : 'Супервизор'}
             </span>
+            {currentUser.group_id && (
+              <span className="meta-badge">
+                🏫 Группа {currentUser.group_id}
+              </span>
+            )}
+            {role === 'student' && currentUser.class && (
+              <span className="meta-badge">
+                🎓 {currentUser.class} класс
+              </span>
+            )}
+            {role === 'student' && currentUser.tg_name && (
+              <span className="meta-badge" style={{ background: '#0088cc20', color: '#0088cc' }}>
+                💬 {currentUser.tg_name}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="card-actions" style={{ display: 'flex', gap: '8px' }}>
+          {role === 'student' && (
+            <button 
+              onClick={() => setShowEditModal(true)} 
+              className="btn btn-primary btn-sm"
+              style={{ flex: 1 }}
+            >
+              ✏️ Редактировать
+            </button>
           )}
+          <button 
+            onClick={handleDelete} 
+            disabled={isDeleting}
+            className="btn btn-danger btn-sm"
+            style={{ flex: role === 'student' ? 1 : undefined, width: role === 'student' ? 'auto' : '100%' }}
+          >
+            {isDeleting ? '🔄 Удаление...' : '🗑️ Удалить'}
+          </button>
         </div>
       </div>
 
-      <div className="card-actions">
-        <button 
-          onClick={handleDelete} 
-          disabled={isDeleting}
-          className="btn btn-danger btn-sm"
-          style={{ width: '100%' }}
-        >
-          {isDeleting ? '🔄 Удаление...' : '🗑️ Удалить'}
-        </button>
-      </div>
-    </div>
+      {showEditModal && role === 'student' && (
+        <StudentEditModal
+          student={currentUser}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+    </>
   );
 };
 

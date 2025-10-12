@@ -6,6 +6,7 @@ import '../AdminFunctions.css';
 const StudentAdd = () => {
   const [fullName, setFullName] = useState('');
   const [classNumber, setClassNumber] = useState('9');
+  const [tgName, setTgName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [error, setError] = useState('');
@@ -23,12 +24,19 @@ const StudentAdd = () => {
     setIsSubmitting(true);
 
     try {
+      const requestData = {
+        full_name: fullName.trim(),
+        class: parseInt(classNumber)
+      };
+      
+      // Добавляем tg_name только если оно заполнено
+      if (tgName.trim()) {
+        requestData.tg_name = tgName.trim();
+      }
+
       const response = await axios.post(
         `${API_BASE_URL}/api/add-student`,
-        {
-          full_name: fullName.trim(),
-          class: parseInt(classNumber)
-        },
+        requestData,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -43,10 +51,12 @@ const StudentAdd = () => {
           login: studentData.login,
           password: studentData.password,
           studentId: studentData.student_id,
-          class: studentData.class
+          class: studentData.class,
+          tgName: studentData.tg_name
         });
         setFullName('');
         setClassNumber('9');
+        setTgName('');
       } else {
         throw new Error(response.data.error || 'Ошибка при создании студента');
       }
@@ -161,6 +171,46 @@ const StudentAdd = () => {
                   <option value="10">10 класс</option>
                   <option value="11">11 класс</option>
                 </select>
+              </div>
+
+              <div>
+                <label 
+                  htmlFor="tgName"
+                  style={{ 
+                    display: 'block', 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    color: '#4a5568',
+                    marginBottom: '8px' 
+                  }}
+                >
+                  💬 Telegram никнейм <span style={{ color: '#95a5a6', fontWeight: '400' }}>(необязательно)</span>
+                </label>
+                <input
+                  type="text"
+                  id="tgName"
+                  value={tgName}
+                  onChange={(e) => setTgName(e.target.value)}
+                  placeholder="@username или username"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '2px solid #e8ecef',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontFamily: 'Montserrat, sans-serif',
+                    transition: 'all 0.3s ease',
+                    background: '#f8f9fa'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#667eea';
+                    e.target.style.background = 'white';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e8ecef';
+                    e.target.style.background = '#f8f9fa';
+                  }}
+                />
               </div>
 
               <button 
