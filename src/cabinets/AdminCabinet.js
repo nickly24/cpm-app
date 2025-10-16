@@ -8,6 +8,7 @@ import TestResultsView from './AdminFunctions/Tests/TestResultsView';
 import { ScanAttendance } from './AdminFunctions/ScanAttedance/ScanAttendance';
 import Exams from './AdminFunctions/Exams/Exams';
 import StudentAdd from './AdminFunctions/Users/StudentAdd';
+import Schedule from './AdminFunctions/Schedule/Schedule';
 import { ReactComponent as Logo } from './logo.svg';
 import './AdminCabinet.css';
 
@@ -37,6 +38,7 @@ const AdminCabinet = () => {
     { id: 'dashboard', label: 'Главная', icon: '🏠', description: 'Обзор системы' },
     { id: 'users', label: 'Пользователи', icon: '👥', description: 'Управление пользователями' },
     { id: 'add-student', label: 'Добавить студента', icon: '➕', description: 'Создание студента' },
+    { id: 'schedule', label: 'Расписание', icon: '📚', description: 'Расписание занятий' },
     { id: 'groups', label: 'Группы', icon: '🏫', description: 'Учебные группы' },
     { id: 'assignments', label: 'Домашние задания', icon: '📝', description: 'Управление ДЗ' },
     { id: 'tests', label: 'Тесты', icon: '📊', description: 'Создание тестов' },
@@ -57,6 +59,8 @@ const AdminCabinet = () => {
         return <UsersByRole />;
       case 'add-student':
         return <StudentAdd />;
+      case 'schedule':
+        return <Schedule />;
       case 'groups':
         return <GroupsFunc />;
       case 'assignments':
