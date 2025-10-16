@@ -7,6 +7,7 @@ import Exams from './StudentFunctions/Exams';
 import StudendAttendance from './StudentFunctions/StudentAttendance';
 import Progress from './StudentFunctions/Progress';
 import Training from './StudentFunctions/Training';
+import StudentSchedule from './StudentFunctions/StudentSchedule';
 const StudentCabinet = () => {
   const studentName = localStorage.getItem('full_name') || 'Студент';
   const groupId = localStorage.getItem('group_id') || 'не указана';
@@ -60,6 +61,8 @@ const StudentCabinet = () => {
         return <StudendAttendance/>
       case 'train':
         return <Training/>  
+      case 'schedule':
+        return <StudentSchedule/>
       default:
         return <Progress/>
     }
@@ -149,6 +152,15 @@ const StudentCabinet = () => {
               }}
             >
               Тренировка
+            </button>
+            <button 
+              className={`nav-button ${activeComponent === 'schedule' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveComponent('schedule');
+                setIsMenuOpen(false);
+              }}
+            >
+              Расписание
             </button>
           </nav>
         </aside>
