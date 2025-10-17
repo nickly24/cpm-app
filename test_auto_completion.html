@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест автоматического завершения</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .question {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .answer {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .answer:hover {
+            background: #e9ecef;
+        }
+        .answer.selected {
+            background: #007bff;
+            color: white;
+        }
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .results {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест автоматического завершения</h1>
+    <p>Этот тест автоматически завершится через 10 секунд. Попробуйте ответить на несколько вопросов и посмотрите, сохранятся ли ваши ответы.</p>
+    
+    <div class="timer" id="timer">Время: 10 секунд</div>
+    
+    <div id="test-container" class="test-container">
+        <div class="question">
+            <h3>Вопрос 1: Что такое JavaScript?</h3>
+            <div class="answer" data-question="1" data-answer="a">Язык программирования</div>
+            <div class="answer" data-question="1" data-answer="b">База данных</div>
+            <div class="answer" data-question="1" data-answer="c">Операционная система</div>
+        </div>
+        
+        <div class="question">
+            <h3>Вопрос 2: Какой тег используется для создания ссылки в HTML?</h3>
+            <div class="answer" data-question="2" data-answer="a">&lt;a&gt;</div>
+            <div class="answer" data-question="2" data-answer="b">&lt;link&gt;</div>
+            <div class="answer" data-question="2" data-answer="c">&lt;href&gt;</div>
+        </div>
+        
+        <div class="question">
+            <h3>Вопрос 3: Что такое CSS?</h3>
+            <div class="answer" data-question="3" data-answer="a">Язык стилей</div>
+            <div class="answer" data-question="3" data-answer="b">Язык программирования</div>
+            <div class="answer" data-question="3" data-answer="c">База данных</div>
+        </div>
+    </div>
+    
+    <div id="results" class="results" style="display: none;">
+        <h3>Результаты автоматического завершения:</h3>
+        <div id="results-content"></div>
+    </div>
+    
+    <div id="error" class="error" style="display: none;">
+        <h3>Ошибка:</h3>
+        <div id="error-content"></div>
+    </div>
+
+    <script>
+        let answers = {};
+        let timeLeft = 10;
+        let isCompleted = false;
+        
+        // Обработка выбора ответов
+        document.querySelectorAll('.answer').forEach(answer => {
+            answer.addEventListener('click', function() {
+                if (isCompleted) return;
+                
+                const questionId = this.dataset.question;
+                const answerValue = this.dataset.answer;
+                
+                // Убираем выделение с других ответов на этот вопрос
+                document.querySelectorAll(`[data-question="${questionId}"]`).forEach(a => {
+                    a.classList.remove('selected');
+                });
+                
+                // Выделяем выбранный ответ
+                this.classList.add('selected');
+                
+                // Сохраняем ответ
+                answers[questionId] = answerValue;
+                
+                console.log('Ответ сохранен:', questionId, answerValue);
+                console.log('Все ответы:', answers);
+            });
+        });
+        
+        // Таймер
+        const timerElement = document.getElementById('timer');
+        const timer = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = `Время: ${timeLeft} секунд`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                autoCompleteTest();
+            }
+        }, 1000);
+        
+        // Автоматическое завершение теста
+        function autoCompleteTest() {
+            if (isCompleted) return;
+            
+            isCompleted = true;
+            console.log('Автоматическое завершение теста');
+            console.log('Сохраненные ответы:', answers);
+            
+            // Скрываем тест
+            document.getElementById('test-container').style.display = 'none';
+            timerElement.style.display = 'none';
+            
+            // Показываем результаты
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('results-content');
+            
+            let resultsHtml = '<h4>Ваши ответы:</h4><ul>';
+            let correctAnswers = 0;
+            let totalQuestions = 3;
+            
+            // Правильные ответы
+            const correctAnswersMap = {
+                '1': 'a', // JavaScript - язык программирования
+                '2': 'a', // Ссылка - тег <a>
+                '3': 'a'  // CSS - язык стилей
+            };
+            
+            for (let i = 1; i <= totalQuestions; i++) {
+                const userAnswer = answers[i] || 'не отвечен';
+                const isCorrect = answers[i] === correctAnswersMap[i];
+                if (isCorrect) correctAnswers++;
+                
+                resultsHtml += `<li>Вопрос ${i}: ${userAnswer} ${isCorrect ? '✅' : '❌'}</li>`;
+            }
+            
+            resultsHtml += '</ul>';
+            resultsHtml += `<p><strong>Правильных ответов: ${correctAnswers} из ${totalQuestions}</strong></p>`;
+            resultsHtml += `<p><strong>Процент: ${Math.round((correctAnswers / totalQuestions) * 100)}%</strong></p>`;
+            
+            resultsContent.innerHTML = resultsHtml;
+            resultsDiv.style.display = 'block';
+            
+            // Очищаем localStorage (симуляция)
+            console.log('localStorage очищен (симуляция)');
+        }
+        
+        // Обработка ошибок
+        window.addEventListener('error', function(e) {
+            document.getElementById('error-content').textContent = e.message;
+            document.getElementById('error').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

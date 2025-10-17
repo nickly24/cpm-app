@@ -153,7 +153,22 @@ export default function TestResultsView() {
   // Получение ответа студента на вопрос
   const getStudentAnswer = (questionId) => {
     if (!testDetails?.studentAnswers) return null;
-    return testDetails.studentAnswers.find(answer => answer.questionId === questionId);
+    const answer = testDetails.studentAnswers.find(answer => answer.questionId === questionId);
+    
+    // Если ответ не найден, возвращаем пустой объект с правильной структурой
+    if (!answer) {
+      return {
+        questionId: questionId,
+        type: 'unknown', // будет определено из вопроса
+        selectedAnswer: null,
+        selectedAnswers: [],
+        textAnswer: '',
+        points: 0,
+        isCorrect: false
+      };
+    }
+    
+    return answer;
   };
 
   // Получение правильных ответов для вопроса
@@ -168,6 +183,14 @@ export default function TestResultsView() {
   // Проверка правильности ответа
   const isAnswerCorrect = (question, studentAnswer) => {
     if (!studentAnswer) return false;
+    
+    // Если это пустой ответ (не отвечен), то неправильно
+    if (studentAnswer.type === 'unknown' || 
+        (!studentAnswer.selectedAnswer && 
+         (!studentAnswer.selectedAnswers || studentAnswer.selectedAnswers.length === 0) && 
+         !studentAnswer.textAnswer)) {
+      return false;
+    }
     
     if (question.type === 'single') {
       return studentAnswer.selectedAnswer && 
@@ -678,7 +701,7 @@ export default function TestResultsView() {
                           
                           {question.type === 'multiple' && (
                             <div className="test_view_res_answer_content">
-                              {studentAnswer?.selectedAnswers?.length > 0 ? (
+                              {studentAnswer?.selectedAnswers && studentAnswer.selectedAnswers.length > 0 ? (
                                 <div className="test_view_res_selected_answers">
                                   {studentAnswer.selectedAnswers.map(answerId => {
                                     const answer = question.answers.find(a => a.id === answerId);

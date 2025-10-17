@@ -28,6 +28,45 @@
   margin-bottom: 30px;
 }
 
+.student-info {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.student-id {
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.student-id strong {
+  color: #3498db;
+  font-size: 18px;
+}
+
+.qr-code-container {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.qr-label {
+  color: #7f8c8d;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.qr-code {
+  max-width: 200px;
+  height: auto;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 10px;
+  background: white;
+}
+
 .ratings-container h3 {
   color: #2c3e50;
   margin-bottom: 20px;

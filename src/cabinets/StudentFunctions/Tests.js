@@ -140,6 +140,14 @@ export default function Tests({ onBack }) {
   const loadTestFromSession = async (session) => {
     try {
       setLoading(true);
+      
+      // Проверяем, не завершен ли уже тест
+      if (session.isCompleted) {
+        setError('Этот тест уже был завершен. Повторное прохождение не разрешено.');
+        localStorage.removeItem('testSession');
+        return;
+      }
+      
       const response = await fetch(`${API_EXAM_URL}/test/${session.testId}`);
       if (!response.ok) throw new Error('Тест не найден');
       const testData = await response.json();
@@ -365,12 +373,22 @@ function DirectionsList({ directions, loading, error, onSelectDirection }) {
   }
 
   if (loading) {
-    return <div className="tests_loading">Загрузка направлений...</div>;
+    return (
+      <div className="student-section">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          Загрузка направлений...
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="tests_directions">
-      <h2 className="tests_title">Выберите направление</h2>
+      <div className="tests_header">
+        <h2 className="tests_title">Выберите направление</h2>
+      </div>
+      
       <div className="tests_directions_list">
         {directions.map(direction => (
           <div 
@@ -395,15 +413,28 @@ function TestsList({
 }) {
   if (error) {
     return (
-      <div className="tests_error">
-        <p>{error}</p>
-        <button onClick={onBack}>Назад</button>
+      <div className="student-section">
+        <div className="empty-state">
+          <div className="empty-icon">⚠️</div>
+          <h3 className="empty-title">Ошибка загрузки</h3>
+          <p className="empty-text">{error}</p>
+          <button className="btn btn-primary" onClick={onBack}>
+            ← Назад
+          </button>
+        </div>
       </div>
     );
   }
 
   if (loading) {
-    return <div className="tests_loading">Загрузка тестов...</div>;
+    return (
+      <div className="student-section">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          Загрузка тестов...
+        </div>
+      </div>
+    );
   }
 
   // Группировка тестов
@@ -762,6 +793,7 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
   const [showCopyWarning, setShowCopyWarning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [isTimeUp, setIsTimeUp] = useState(false);
 
   useEffect(() => {
     // Восстанавливаем сессию из localStorage
@@ -780,7 +812,7 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
       setTimeLeft(Math.ceil(remaining / 1000));
       
       if (remaining === 0 && !isCompleted) {
-        handleCompleteTest();
+        setIsTimeUp(true);
       }
     };
 
@@ -805,6 +837,9 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
   };
 
   const handleAnswer = (questionId, answer, questionType) => {
+    console.log('handleAnswer вызвана:', { questionId, answer, questionType });
+    console.log('Текущие ответы до обновления:', answers);
+    
     const newAnswers = [...answers];
     const existingAnswerIndex = newAnswers.findIndex(a => a.questionId === questionId);
     
@@ -818,10 +853,13 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
     if (existingAnswerIndex >= 0) {
       newAnswers[existingAnswerIndex] = answerData;
+      console.log('Обновлен существующий ответ:', existingAnswerIndex);
     } else {
       newAnswers.push(answerData);
+      console.log('Добавлен новый ответ');
     }
 
+    console.log('Новые ответы после обновления:', newAnswers);
     setAnswers(newAnswers);
     
     // Сохраняем в localStorage
@@ -831,9 +869,34 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
       answers: newAnswers
     };
     localStorage.setItem('testSession', JSON.stringify(updatedSession));
+    console.log('Ответы сохранены в localStorage');
+  };
+
+  // Проверка, есть ли ответ на текущий вопрос
+  const hasAnswerForCurrentQuestion = () => {
+    const currentQuestion = test.questions[currentQuestionIndex];
+    const existingAnswer = answers.find(answer => answer.questionId === currentQuestion.questionId);
+    
+    if (!existingAnswer) return false;
+    
+    if (currentQuestion.type === 'single') {
+      return existingAnswer.selectedAnswer !== null && existingAnswer.selectedAnswer !== undefined;
+    } else if (currentQuestion.type === 'multiple') {
+      return existingAnswer.selectedAnswers && existingAnswer.selectedAnswers.length > 0;
+    } else if (currentQuestion.type === 'text') {
+      return existingAnswer.textAnswer && existingAnswer.textAnswer.trim() !== '';
+    }
+    
+    return false;
   };
 
   const nextQuestion = () => {
+    // Проверяем, есть ли ответ на текущий вопрос
+    if (!hasAnswerForCurrentQuestion()) {
+      setSubmitError('Пожалуйста, выберите ответ на текущий вопрос перед переходом к следующему.');
+      return;
+    }
+    
     if (currentQuestionIndex < test.questions.length - 1) {
       const newIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(newIndex);
@@ -847,20 +910,254 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
     }
   };
 
-  const prevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+  // Автоматическое завершение теста по истечении времени (без проверки обязательности ответа)
+  const handleAutoCompleteTest = async () => {
+    if (isCompleted || isSubmitting) return;
+    
+    console.log('Автоматическое завершение теста по истечении времени');
+    
+    // Принудительно обновляем localStorage с текущими ответами перед завершением
+    console.log('ПЕРЕД принудительным обновлением - ответы из React:', answers);
+    console.log('ПЕРЕД принудительным обновлением - session:', session);
+    
+    const updatedSession = {
+      ...session,
+      answers: answers
+    };
+    localStorage.setItem('testSession', JSON.stringify(updatedSession));
+    console.log('Принудительно обновлен localStorage с ответами:', answers.length);
+    console.log('Принудительно обновлен localStorage - ответы:', answers);
+    
+    // ВСЕГДА берем ответы из localStorage - это источник истины
+    const savedSession = localStorage.getItem('testSession');
+    let finalAnswers = [];
+    
+    if (savedSession) {
+      try {
+        const parsedSession = JSON.parse(savedSession);
+        finalAnswers = parsedSession.answers || [];
+        console.log('Загружены ответы из localStorage:', finalAnswers.length);
+        console.log('Ответы из localStorage:', finalAnswers);
+        console.log('ПОСЛЕ загрузки из localStorage - finalAnswers:', finalAnswers);
+      } catch (error) {
+        console.error('Ошибка загрузки сессии из localStorage:', error);
+        // Если ошибка, берем из состояния React как fallback
+        finalAnswers = [...answers];
+        console.log('Fallback - ответы из состояния React:', finalAnswers.length);
+        console.log('Fallback - ответы из состояния React:', finalAnswers);
+      }
+    } else {
+      // Если нет localStorage, берем из состояния React
+      finalAnswers = [...answers];
+      console.log('Нет localStorage - ответы из состояния React:', finalAnswers.length);
+      console.log('Нет localStorage - ответы из состояния React:', finalAnswers);
+    }
+    
+    // Устанавливаем флаг отправки ПОСЛЕ загрузки ответов
+    setIsSubmitting(true);
+    setSubmitError(null);
+    
+    // Убеждаемся, что у нас есть ответы для всех вопросов (даже пустые)
+    const allQuestionIds = test.questions.map(q => q.questionId);
+    const answeredQuestionIds = finalAnswers.map(a => a.questionId);
+    
+    // Добавляем пустые ответы для вопросов, на которые не отвечали
+    allQuestionIds.forEach(questionId => {
+      if (!answeredQuestionIds.includes(questionId)) {
+        const question = test.questions.find(q => q.questionId === questionId);
+        const emptyAnswer = {
+          questionId: questionId,
+          type: question.type,
+          selectedAnswer: null,
+          selectedAnswers: [],
+          textAnswer: '',
+          points: 0,
+          isCorrect: false
+        };
+        finalAnswers.push(emptyAnswer);
+      }
+    });
+    
+    console.log('Финальные ответы для отправки:', finalAnswers.length);
+    console.log('Всего вопросов в тесте:', test.questions.length);
+    console.log('Детали ответов:', finalAnswers.map(a => ({
+      questionId: a.questionId,
+      type: a.type,
+      selectedAnswer: a.selectedAnswer,
+      selectedAnswers: a.selectedAnswers,
+      textAnswer: a.textAnswer,
+      points: a.points,
+      isCorrect: a.isCorrect
+    })));
+    
+    // Рассчитываем баллы на клиенте
+    const calculatedAnswers = finalAnswers.map(answer => {
+      const question = test.questions.find(q => q.questionId === answer.questionId);
+      if (!question) return answer;
+
+      let isCorrect = false;
+      let points = 0;
+
+      if (question.type === 'single') {
+        const correctAnswer = question.answers.find(a => a.isCorrect);
+        isCorrect = answer.selectedAnswer === correctAnswer?.id;
+        points = isCorrect ? question.points : 0;
+      } else if (question.type === 'multiple') {
+        const correctAnswers = question.answers.filter(a => a.isCorrect).map(a => a.id);
+        const incorrectAnswers = question.answers.filter(a => !a.isCorrect).map(a => a.id);
+        const selectedAnswers = answer.selectedAnswers || [];
+        
+        // СТРОГАЯ ПРОВЕРКА для множественного выбора:
+        // 1. Выбраны ВСЕ правильные ответы (ни одного не пропущено)
+        // 2. НЕ выбраны НИ ОДИН неправильный ответ
+        // 3. Количество выбранных ответов равно количеству правильных
+        // Если хотя бы одно условие не выполнено - 0 баллов
+        const allCorrectSelected = correctAnswers.length === selectedAnswers.length && 
+                                  correctAnswers.every(id => selectedAnswers.includes(id));
+        const noIncorrectSelected = !selectedAnswers.some(id => incorrectAnswers.includes(id));
+        
+        isCorrect = allCorrectSelected && noIncorrectSelected;
+        points = isCorrect ? question.points : 0;
+      } else if (question.type === 'text') {
+        const correctAnswers = question.correctAnswers.map(ca => ca.toLowerCase().trim());
+        const userAnswer = (answer.textAnswer || '').toLowerCase().trim();
+        isCorrect = correctAnswers.some(ca => ca === userAnswer);
+        points = isCorrect ? question.points : 0;
+      }
+
+      return {
+        ...answer,
+        isCorrect,
+        points
+      };
+    });
+
+    // Рассчитываем общую статистику
+    const totalPoints = calculatedAnswers.reduce((sum, answer) => sum + parseInt(answer.points), 0);
+    const maxPoints = test.questions.reduce((sum, question) => sum + parseInt(question.points), 0);
+    const correctAnswers = calculatedAnswers.filter(answer => answer.isCorrect).length;
+    const accuracy = test.questions.length > 0 ? Math.round((correctAnswers / test.questions.length) * 100) : 0;
+    const timeSpentMinutes = Math.ceil((Date.now() - session.startTime) / (1000 * 60));
+    
+    // Рассчитываем рейтинговый балл (процент от максимального балла, выраженный в баллах от 0 до 100)
+    const ratingScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+
+    const results = {
+      testTitle: test.title,
+      totalPoints: parseInt(totalPoints),
+      maxPoints: parseInt(maxPoints),
+      ratingScore: ratingScore,
+      correctAnswers,
+      totalQuestions: test.questions.length,
+      accuracy,
+      timeSpentMinutes,
+      answers: calculatedAnswers,
+      autoCompleted: true // Флаг автоматического завершения
+    };
+
+    // Отправляем результаты на сервер только если не режим тренировки
+    if (!isPracticeMode) {
+      try {
+        const response = await fetch(`${API_EXAM_URL}/create-test-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        body: JSON.stringify({
+          studentId: getStudentId(),
+          testId: test._id,
+          testTitle: test.title,
+          answers: calculatedAnswers,
+          timeSpentMinutes: timeSpentMinutes,
+          score: ratingScore
+        })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Тест автоматически завершен, ID сессии:', result.id);
+          setIsCompleted(true);
+          
+          // Обновляем сессию в localStorage как завершенную
+          const updatedSession = { ...session, isCompleted: true };
+          localStorage.setItem('testSession', JSON.stringify(updatedSession));
+          
+          onComplete(results);
+        } else if (response.status === 409) {
+          // Обработка ошибки дублирования (тест уже сдан)
+          const errorData = await response.json();
+          console.warn('Тест уже сдан:', errorData);
+          setSubmitError(`Тест уже был сдан ранее. Результат: ${errorData.existingScore || 'неизвестно'} баллов`);
+          setIsCompleted(true);
+          
+          // Обновляем сессию в localStorage как завершенную
+          const updatedSession = { ...session, isCompleted: true };
+          localStorage.setItem('testSession', JSON.stringify(updatedSession));
+          
+          onComplete(results);
+        } else {
+          const errorText = await response.text();
+          throw new Error(`Ошибка сервера (${response.status}): ${errorText}`);
+        }
+      } catch (error) {
+        console.error('Ошибка отправки результатов:', error);
+        
+        // Различаем типы ошибок
+        if (error.message.includes('409')) {
+          setSubmitError('Тест уже был сдан ранее. Повторная отправка невозможна.');
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          setSubmitError('Ошибка сети. Проверьте подключение к интернету и попробуйте еще раз.');
+        } else {
+          setSubmitError('Не удалось отправить результаты. Попробуйте еще раз.');
+        }
+        
+        setIsSubmitting(false);
+        return;
+      }
+    } else {
+      console.log('Режим тренировки - результаты не отправлены на сервер');
+      setIsCompleted(true);
+      onComplete(results);
+    }
+
+    // Очищаем localStorage только при успешном завершении
+    if (isCompleted) {
+      localStorage.removeItem('testSession');
     }
   };
 
   const handleCompleteTest = async () => {
     if (isCompleted || isSubmitting) return;
     
+    // Проверяем, есть ли ответ на текущий вопрос (только если время НЕ истекло)
+    if (!isTimeUp && !hasAnswerForCurrentQuestion()) {
+      setSubmitError('Пожалуйста, выберите ответ на текущий вопрос перед завершением теста.');
+      return;
+    }
+    
     setIsSubmitting(true);
     setSubmitError(null);
     
+    // Дополнительная защита от повторных вызовов
+    if (isCompleted || isSubmitting) return;
+    
     // Рассчитываем баллы на клиенте
-    const calculatedAnswers = answers.map(answer => {
+    // ВСЕГДА берем ответы из localStorage - это источник истины
+    const savedSession = localStorage.getItem('testSession');
+    let currentAnswers = answers;
+    
+    if (savedSession) {
+      try {
+        const parsedSession = JSON.parse(savedSession);
+        currentAnswers = parsedSession.answers || [];
+        console.log('Обычное завершение - загружены ответы из localStorage:', currentAnswers.length);
+        console.log('Ответы из localStorage:', currentAnswers);
+      } catch (error) {
+        console.error('Ошибка загрузки сессии из localStorage:', error);
+      }
+    }
+    
+    const calculatedAnswers = currentAnswers.map(answer => {
       const question = test.questions.find(q => q.questionId === answer.questionId);
       if (!question) return answer;
 
@@ -945,13 +1242,40 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           const result = await response.json();
           console.log('Тест завершен, ID сессии:', result.id);
           setIsCompleted(true);
+          
+          // Обновляем сессию в localStorage как завершенную
+          const updatedSession = { ...session, isCompleted: true };
+          localStorage.setItem('testSession', JSON.stringify(updatedSession));
+          
           onComplete(results);
+        } else if (response.status === 409) {
+          // Обработка ошибки дублирования (тест уже сдан)
+          const errorData = await response.json();
+          console.warn('Тест уже сдан:', errorData);
+          setSubmitError(`Тест уже был сдан ранее. Результат: ${errorData.existingScore || 'неизвестно'} баллов`);
+          setIsCompleted(true); // Помечаем как завершенный, чтобы показать результаты
+          
+          // Обновляем сессию в localStorage как завершенную
+          const updatedSession = { ...session, isCompleted: true };
+          localStorage.setItem('testSession', JSON.stringify(updatedSession));
+          
+          onComplete(results); // Показываем результаты локально
         } else {
-          throw new Error('Ошибка сервера при отправке результатов');
+          const errorText = await response.text();
+          throw new Error(`Ошибка сервера (${response.status}): ${errorText}`);
         }
       } catch (error) {
         console.error('Ошибка отправки результатов:', error);
-        setSubmitError('Не удалось отправить результаты. Проверьте подключение к интернету.');
+        
+        // Различаем типы ошибок
+        if (error.message.includes('409')) {
+          setSubmitError('Тест уже был сдан ранее. Повторная отправка невозможна.');
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          setSubmitError('Ошибка сети. Проверьте подключение к интернету и попробуйте еще раз.');
+        } else {
+          setSubmitError('Не удалось отправить результаты. Попробуйте еще раз.');
+        }
+        
         setIsSubmitting(false);
         return; // Не завершаем тест при ошибке
       }
@@ -981,6 +1305,12 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
   const currentQuestion = test.questions[currentQuestionIndex];
   const currentAnswer = answers.find(a => a.questionId === currentQuestion?.questionId);
+  
+  console.log('=== ОТЛАДКА КОМПОНЕНТА ТЕСТА ===');
+  console.log('Текущий вопрос:', currentQuestionIndex, currentQuestion?.questionId);
+  console.log('Всего ответов в массиве:', answers.length);
+  console.log('Текущий ответ:', currentAnswer);
+  console.log('Все ответы:', answers);
 
   return (
     <div className="tests_test_component">
@@ -1076,26 +1406,22 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
       )}
 
       <div className="tests_navigation">
-        <button 
-          className="tests_nav_btn"
-          onClick={prevQuestion}
-          disabled={currentQuestionIndex === 0}
-        >
-          Предыдущий
-        </button>
-        
         {currentQuestionIndex === test.questions.length - 1 ? (
           <div className="tests_complete_section">
             <button
-              className="tests_complete_btn"
+              className={`tests_complete_btn ${!isTimeUp && !hasAnswerForCurrentQuestion() ? 'tests_nav_btn_disabled' : ''}`}
               onClick={handleCompleteTest}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isCompleted || (!isTimeUp && !hasAnswerForCurrentQuestion())}
             >
               {isSubmitting ? (
                 <>
                   <span className="tests_loading_spinner"></span>
                   Отправка...
                 </>
+              ) : isCompleted ? (
+                'Тест завершен'
+              ) : !isTimeUp && !hasAnswerForCurrentQuestion() ? (
+                'Выберите ответ'
               ) : (
                 'Завершить тест'
               )}
@@ -1114,10 +1440,11 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           </div>
         ) : (
           <button 
-            className="tests_nav_btn"
+            className={`tests_nav_btn ${!hasAnswerForCurrentQuestion() ? 'tests_nav_btn_disabled' : ''}`}
             onClick={nextQuestion}
+            disabled={!hasAnswerForCurrentQuestion()}
           >
-            Следующий
+            {hasAnswerForCurrentQuestion() ? 'Следующий' : 'Выберите ответ'}
           </button>
         )}
       </div>
@@ -1128,6 +1455,26 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           <div className="tests_copy_warning_content">
             <span className="tests_copy_warning_icon">⚠️</span>
             <p>Копирование текста вопросов запрещено!</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Модальное окно "Время вышло" */}
+      {isTimeUp && (
+        <div className="tests_timeup_modal">
+          <div className="tests_timeup_modal_content">
+            <h2>⏰ Время вышло!</h2>
+            <p>Время на прохождение теста истекло.</p>
+            <p>Нажмите "Завершить тест" чтобы отправить ваши ответы.</p>
+            <div className="tests_timeup_modal_buttons">
+              <button 
+                className="tests_timeup_btn tests_timeup_btn_primary"
+                onClick={handleCompleteTest}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Отправка...' : 'Завершить тест'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1161,6 +1508,11 @@ function TestResults({ results, isPracticeMode, onBack }) {
         {isPracticeMode && (
           <p className="tests_practice_mode_notice">
             ⚠️ Режим тренировки - результаты не засчитаны
+          </p>
+        )}
+        {results.autoCompleted && (
+          <p className="tests_auto_completed_notice">
+            ⏰ Тест автоматически завершен по истечении времени
           </p>
         )}
       </div>
@@ -1234,6 +1586,11 @@ function TestResults({ results, isPracticeMode, onBack }) {
 // Компонент разбора теста
 function TestReview({ test, stats, onBack }) {
   const getAnswerText = (question, answer) => {
+    // Проверяем, что answer существует
+    if (!answer) {
+      return 'Ответ не найден';
+    }
+    
     if (question.type === 'single') {
       const selectedAnswer = question.answers.find(a => a.id === answer.selectedAnswer);
       return selectedAnswer ? selectedAnswer.text : 'Не выбран ответ';
@@ -1275,6 +1632,17 @@ function TestReview({ test, stats, onBack }) {
           const isCorrect = answer?.isCorrect || false;
           const points = answer?.points || 0;
           
+          // Если ответ не найден, создаем пустой объект ответа
+          const safeAnswer = answer || {
+            questionId: question.questionId,
+            type: question.type,
+            selectedAnswer: null,
+            selectedAnswers: [],
+            textAnswer: '',
+            points: 0,
+            isCorrect: false
+          };
+          
           return (
             <div key={question.questionId} className="tests_review_question">
               <div className="tests_review_question_header">
@@ -1295,7 +1663,7 @@ function TestReview({ test, stats, onBack }) {
                 <div className="tests_review_answer_section">
                   <h4>Ваш ответ:</h4>
                   <div className={`tests_review_answer ${isCorrect ? 'correct' : 'incorrect'}`}>
-                    {getAnswerText(question, answer)}
+                    {getAnswerText(question, safeAnswer)}
                   </div>
                 </div>
                 

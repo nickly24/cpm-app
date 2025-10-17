@@ -1,17 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import QRCode from 'qrcode';
 import './Progress.css'; // Создадим отдельный файл для стилей
 import { API_EXAM_URL } from '../../Config';
 const Progress = ({ onBack }) => {
   const studentName = localStorage.getItem('full_name');
+  const studentId = localStorage.getItem('id');
   const [ratings, setRatings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+
+  // Функция генерации QR-кода
+  const generateQRCode = async (text) => {
+    try {
+      const url = await QRCode.toDataURL(text, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeUrl(url);
+    } catch (err) {
+      console.error('Ошибка генерации QR-кода:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchRatings = async () => {
       try {
-        const studentId = localStorage.getItem('id'); // Предполагаем, что ID хранится в localStorage
         const response = await axios.post(`${API_EXAM_URL}/student-rating`, {
           student_id: studentId
         });
@@ -30,7 +49,12 @@ const Progress = ({ onBack }) => {
     };
 
     fetchRatings();
-  }, []);
+    
+    // Генерируем QR-код с ID студента
+    if (studentId) {
+      generateQRCode(studentId);
+    }
+  }, [studentId]);
 
   // Функция для отрисовки столбцов диаграммы
   const renderBar = (value, max = 100, label) => {
@@ -53,6 +77,15 @@ const Progress = ({ onBack }) => {
     <div className="content-section">
       <div className="welcome-section">
         <h2>Добро пожаловать, {studentName}! 👋</h2>
+        <div className="student-info">
+          <p className="student-id">Ваш ID: <strong>{studentId}</strong></p>
+          {qrCodeUrl && (
+            <div className="qr-code-container">
+              <p className="qr-label">QR-код для сканирования:</p>
+              <img src={qrCodeUrl} alt="QR код студента" className="qr-code" />
+            </div>
+          )}
+        </div>
       </div>
       
       

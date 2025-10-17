@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отладка сохранения ответов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .question {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .answer {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .answer:hover {
+            background: #e9ecef;
+        }
+        .answer.selected {
+            background: #007bff;
+            color: white;
+        }
+        .debug {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Отладка сохранения ответов</h1>
+    <p>Ответьте на вопросы и посмотрите, как сохраняются ответы в массиве.</p>
+    
+    <div class="question">
+        <h3>Вопрос 1: Что такое JavaScript?</h3>
+        <div class="answer" data-question="1" data-answer="a">Язык программирования</div>
+        <div class="answer" data-question="1" data-answer="b">База данных</div>
+        <div class="answer" data-question="1" data-answer="c">Операционная система</div>
+    </div>
+    
+    <div class="question">
+        <h3>Вопрос 2: Какой тег используется для создания ссылки в HTML?</h3>
+        <div class="answer" data-question="2" data-answer="a">&lt;a&gt;</div>
+        <div class="answer" data-question="2" data-answer="b">&lt;link&gt;</div>
+        <div class="answer" data-question="2" data-answer="c">&lt;href&gt;</div>
+    </div>
+    
+    <button onclick="simulateAutoComplete()">Симулировать автоматическое завершение</button>
+    <button onclick="simulateNormalComplete()">Симулировать обычное завершение</button>
+    
+    <div class="debug" id="debug"></div>
+
+    <script>
+        let answers = [];
+        
+        // Обработка выбора ответов
+        document.querySelectorAll('.answer').forEach(answer => {
+            answer.addEventListener('click', function() {
+                const questionId = parseInt(this.dataset.question);
+                const answerValue = this.dataset.answer;
+                
+                // Убираем выделение с других ответов на этот вопрос
+                document.querySelectorAll(`[data-question="${questionId}"]`).forEach(a => {
+                    a.classList.remove('selected');
+                });
+                
+                // Выделяем выбранный ответ
+                this.classList.add('selected');
+                
+                // Сохраняем ответ
+                const existingAnswerIndex = answers.findIndex(a => a.questionId === questionId);
+                if (existingAnswerIndex !== -1) {
+                    // Обновляем существующий ответ
+                    answers[existingAnswerIndex].selectedAnswer = answerValue;
+                } else {
+                    // Создаем новый ответ
+                    answers.push({
+                        questionId: questionId,
+                        type: 'single',
+                        selectedAnswer: answerValue,
+                        selectedAnswers: [],
+                        textAnswer: '',
+                        points: 0,
+                        isCorrect: false
+                    });
+                }
+                
+                updateDebug();
+            });
+        });
+        
+        function updateDebug() {
+            document.getElementById('debug').textContent = 
+                'Текущие ответы:\n' + 
+                JSON.stringify(answers, null, 2);
+        }
+        
+        function simulateAutoComplete() {
+            console.log('=== СИМУЛЯЦИЯ АВТОМАТИЧЕСКОГО ЗАВЕРШЕНИЯ ===');
+            console.log('Исходные ответы:', answers.length);
+            console.log('Ответы:', answers);
+            
+            // Симулируем логику handleAutoCompleteTest
+            const currentQuestion = { questionId: 2 }; // Предполагаем, что мы на втором вопросе
+            let finalAnswers = [...answers];
+            
+            // Проверяем, есть ли ответ на текущий вопрос
+            const existingAnswerIndex = finalAnswers.findIndex(answer => answer.questionId === currentQuestion.questionId);
+            if (existingAnswerIndex === -1) {
+                // Если ответа нет, создаем пустой ответ для текущего вопроса
+                const emptyAnswer = {
+                    questionId: currentQuestion.questionId,
+                    type: 'single',
+                    selectedAnswer: null,
+                    selectedAnswers: [],
+                    textAnswer: '',
+                    points: 0,
+                    isCorrect: false
+                };
+                finalAnswers.push(emptyAnswer);
+                console.log('Добавлен пустой ответ для текущего вопроса:', currentQuestion.questionId);
+            }
+            
+            // Убеждаемся, что у нас есть ответы для всех вопросов
+            const allQuestionIds = [1, 2]; // Симулируем 2 вопроса
+            const answeredQuestionIds = finalAnswers.map(a => a.questionId);
+            
+            allQuestionIds.forEach(questionId => {
+                if (!answeredQuestionIds.includes(questionId)) {
+                    const emptyAnswer = {
+                        questionId: questionId,
+                        type: 'single',
+                        selectedAnswer: null,
+                        selectedAnswers: [],
+                        textAnswer: '',
+                        points: 0,
+                        isCorrect: false
+                    };
+                    finalAnswers.push(emptyAnswer);
+                }
+            });
+            
+            console.log('Финальные ответы:', finalAnswers.length);
+            console.log('Детали ответов:', finalAnswers);
+            
+            document.getElementById('debug').textContent = 
+                'АВТОМАТИЧЕСКОЕ ЗАВЕРШЕНИЕ:\n' +
+                'Исходные ответы: ' + answers.length + '\n' +
+                'Финальные ответы: ' + finalAnswers.length + '\n\n' +
+                'Детали:\n' + 
+                JSON.stringify(finalAnswers, null, 2);
+        }
+        
+        function simulateNormalComplete() {
+            console.log('=== СИМУЛЯЦИЯ ОБЫЧНОГО ЗАВЕРШЕНИЯ ===');
+            console.log('Ответы:', answers.length);
+            console.log('Ответы:', answers);
+            
+            document.getElementById('debug').textContent = 
+                'ОБЫЧНОЕ ЗАВЕРШЕНИЕ:\n' +
+                'Ответы: ' + answers.length + '\n\n' +
+                'Детали:\n' + 
+                JSON.stringify(answers, null, 2);
+        }
+        
+        // Инициализация
+        updateDebug();
+    </script>
+</body>
+</html>
