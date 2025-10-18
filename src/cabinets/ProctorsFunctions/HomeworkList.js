@@ -47,6 +47,37 @@ const HomeworkList = () => {
   // Меняем страницу
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // Функция для определения цвета дедлайна
+  const getDeadlineColor = (deadline) => {
+    if (!deadline) return '#95a5a6'; // Серый для заданий без дедлайна
+    
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return '#e74c3c'; // Красный для просроченных
+    if (diffDays <= 2) return '#f39c12'; // Оранжевый для истекающих (1-2 дня)
+    if (diffDays <= 7) return '#f1c40f'; // Желтый для скоро истекающих (3-7 дней)
+    return '#27ae60'; // Зеленый для актуальных
+  };
+
+  // Функция для определения текста дедлайна
+  const getDeadlineText = (deadline) => {
+    if (!deadline) return 'Не указан';
+    
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return `Просрочено на ${Math.abs(diffDays)} дн.`;
+    if (diffDays === 0) return 'Истекает сегодня';
+    if (diffDays === 1) return 'Истекает завтра';
+    if (diffDays <= 7) return `Осталось ${diffDays} дн.`;
+    return new Date(deadline).toLocaleDateString('ru-RU');
+  };
+
   if (loading) return <div className="loading">Загрузка заданий...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -65,6 +96,9 @@ const HomeworkList = () => {
               <div className="hw-header">
                 <span className="hw-type">{hw.type}</span>
                 <h3 className="hw-title">{hw.name}</h3>
+                <div className="hw-deadline">
+                  📅 Дедлайн: {hw.deadline ? new Date(hw.deadline).toLocaleDateString('ru-RU') : 'Не указан'}
+                </div>
               </div>
               <div className={`expand-icon ${expandedId === hw.id ? 'expanded' : ''}`}>
                 {expandedId === hw.id ? '▲' : '▼'}
