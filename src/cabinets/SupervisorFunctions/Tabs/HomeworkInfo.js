@@ -28,7 +28,6 @@ const HomeworkInfo = ({ studentId }) => {
 
         if (response.data?.status && Array.isArray(response.data?.res)) {
           const filteredHomeworks = response.data.res
-            .filter(hw => !hw.status.includes('FFFF'))
             .map(hw => ({
               ...hw,
               deadline: new Date(hw.deadline)
@@ -129,7 +128,9 @@ const HomeworkInfo = ({ studentId }) => {
                 {isSubmitted ? (
                   <span className="hw-result">Оценка: <strong>{hw.result}</strong> баллов</span>
                 ) : (
-                  <span className="hw-status-text">{hw.status}</span>
+                  <span className="hw-status-text">
+                    {hw.status && hw.status.includes('FFFF') ? 'ДЗ не сделано' : hw.status}
+                  </span>
                 )}
               </div>
             </div>

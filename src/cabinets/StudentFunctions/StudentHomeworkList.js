@@ -23,9 +23,8 @@ const StudentHomeworkList = () => {
         );
 
         if (response.data?.status && Array.isArray(response.data?.res)) {
-          // Фильтруем задания с 'FFFF' и сортируем по дате
+          // Сортируем все задания по дате (убрали фильтрацию FFFF)
           const filteredHomeworks = response.data.res
-            .filter(hw => !hw.status.includes('FFFF'))
             .map(hw => ({
               ...hw,
               deadline: new Date(hw.deadline)
@@ -109,7 +108,9 @@ const StudentHomeworkList = () => {
                 {isSubmitted ? (
                   <span className="result">Оценка: {parseInt(hw.result)} баллов</span>
                 ) : (
-                  <span className="status">{hw.status}</span>
+                  <span className="status">
+                    {hw.status && hw.status.includes('FFFF') ? 'ДЗ не сделано' : hw.status}
+                  </span>
                 )}
               </div>
             </div>

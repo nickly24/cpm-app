@@ -278,3 +278,160 @@
     font-size: 0.8rem;
   }
 }
+
+/* Стили для редактирования ДЗ */
+.students-sessions-list {
+  margin-top: 20px;
+}
+
+.session-card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-left: 4px solid #e0e0e0;
+}
+
+.session-card.submitted {
+  border-left-color: #4CAF50;
+}
+
+.session-card.not-submitted {
+  border-left-color: #FF9800;
+}
+
+.student-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.student-id {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.date-pass {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.edit-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.edit-btn {
+  padding: 8px 16px;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover {
+  background: #1976D2;
+}
+
+.edit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #d32f2f;
+}
+
+.pass-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.submit-btn {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.submit-btn:hover {
+  background: #45a049;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.status {
+  color: #666;
+  font-style: italic;
+}
+
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #c3e6cb;
+}
+
+.error-students {
+  color: #d32f2f;
+  background: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #ffcdd2;
+}
+
+.loading-students {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
