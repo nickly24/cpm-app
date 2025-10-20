@@ -118,7 +118,7 @@ export default function Attendance() {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .attendance-container {
           max-width: 90%;
           margin: 30px auto;

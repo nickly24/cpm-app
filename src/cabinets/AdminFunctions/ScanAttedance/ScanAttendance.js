@@ -9,14 +9,8 @@ export function ScanAttendance() {
     const [scanHistory, setScanHistory] = useState([]);
     const studentIdRef = useRef(null);
 
-    // Загрузка уведомления и истории из localStorage при загрузке
+    // Загрузка истории из localStorage при загрузке
     useEffect(() => {
-        const savedNotification = localStorage.getItem('lastAttendanceNotification');
-        if (savedNotification) {
-            setNotification(JSON.parse(savedNotification));
-            localStorage.removeItem('lastAttendanceNotification');
-        }
-
         const savedHistory = localStorage.getItem('scanHistory');
         if (savedHistory) {
             setScanHistory(JSON.parse(savedHistory));
@@ -54,9 +48,9 @@ export function ScanAttendance() {
             
             const data = await response.json();
             
-            if (response.ok) {
+            if (response.ok && data.status) {
                 // Получаем информацию о студенте
-                const studentInfoResponse = await fetch(`${API_EXAM_URL}/get-class-name-by-studID`, {
+                const studentInfoResponse = await fetch(`${API_BASE_URL}/api/get-class-name-by-studID`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -69,7 +63,7 @@ export function ScanAttendance() {
                 const studentInfo = await studentInfoResponse.json();
                 
                 if (studentInfo.status && studentInfo.data) {
-                    // Добавляем в историю (максимум 10 записей)
+                    // Добавляем в историю только при успешном добавлении (максимум 10 записей)
                     setScanHistory(prev => {
                         const newHistory = [{
                             id: studentInfo.data.id,
@@ -82,17 +76,26 @@ export function ScanAttendance() {
                     });
                 }
 
-                // Сохраняем уведомление перед обновлением
-                localStorage.setItem('lastAttendanceNotification', JSON.stringify({
-                    message: '✅ Успешно добавлено',
-                    isSuccess: true
-                }));
-                window.location.reload(); // Страница обновится и покажет уведомление
+                // Показываем уведомление об успехе
+                setNotification({ 
+                    message: '✅ Успешно добавлено', 
+                    isSuccess: true 
+                });
+                
+                // Автоматически скрываем уведомление через 3 секунды
+                setTimeout(() => {
+                    setNotification(null);
+                }, 3000);
             } else {
                 setNotification({ 
-                    message: data.message || '❌ Ошибка при добавлении', 
+                    message: data.error || data.message || '❌ Ошибка при добавлении', 
                     isSuccess: false 
                 });
+                
+                // Автоматически скрываем ошибку через 5 секунд
+                setTimeout(() => {
+                    setNotification(null);
+                }, 5000);
             }
         } catch (error) {
             setNotification({ 
@@ -192,7 +195,7 @@ export function ScanAttendance() {
                 )}
             </div>
             
-            <style jsx>{`
+            <style>{`
                 .scan-attendance-container {
                     max-width: 500px;
                     margin: 0 auto;

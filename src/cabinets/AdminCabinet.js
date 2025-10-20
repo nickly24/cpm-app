@@ -4,7 +4,7 @@ import GroupsFunc from './AdminFunctions/Groups/GroupsFunc';
 import Attendance from './AdminFunctions/Attendance/Attendance';
 import UsersByRole from './AdminFunctions/Users/UsersByRole';
 import TestsManagement from './AdminFunctions/Tests/TestsManagement';
-import TestResultsView from './AdminFunctions/Tests/TestResultsView';
+import ResultsView from './AdminFunctions/Results/ResultsView';
 import { ScanAttendance } from './AdminFunctions/ScanAttedance/ScanAttendance';
 import Exams from './AdminFunctions/Exams/Exams';
 import StudentAdd from './AdminFunctions/Users/StudentAdd';
@@ -70,7 +70,7 @@ const AdminCabinet = () => {
       case 'tests':
         return <TestsManagement />;
       case 'test-results':
-        return <TestResultsView />;
+        return <ResultsView />;
       case 'scan':
         return <ScanAttendance />;
       case 'exams':
