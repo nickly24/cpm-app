@@ -200,8 +200,13 @@ export default function Tests({ onBack }) {
       if (!response.ok) throw new Error('Тест не найден');
       const testData = await response.json();
       
-      // Перемешиваем вопросы в случайном порядке
-      const shuffledQuestions = [...testData.questions].sort(() => Math.random() - 0.5);
+      // Перемешиваем вопросы в случайном порядке (Fisher-Yates алгоритм)
+      const shuffledQuestions = [...testData.questions];
+      for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+      }
+      
       const shuffledTestData = {
         ...testData,
         questions: shuffledQuestions

@@ -8,6 +8,23 @@
   padding: 2.5vw;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   box-sizing: border-box;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Стили для всех элементов внутри тестов */
+.tests_directions *,
+.tests_tests *,
+.tests_test_component *,
+.tests_question *,
+.tests_answer_option *,
+.tests_results *,
+.tests_review * {
+  max-width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .tests_title {
@@ -264,6 +281,10 @@
   font-size: 1.3rem;
   margin-bottom: 15px;
   line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 .tests_question_points {
@@ -311,6 +332,10 @@
   font-size: 16px;
   color: #2c3e50;
   flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 .tests_text_answer textarea {
@@ -1541,4 +1566,199 @@
   background: #6c757d;
   cursor: not-allowed;
   transform: none;
+}
+
+/* ============================ АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ============================ */
+
+@media (max-width: 768px) {
+  /* Общие адаптивные стили */
+  .tests_directions,
+  .tests_tests,
+  .tests_test_component {
+    padding: 15px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Заголовки */
+  .tests_title {
+    font-size: 1.5rem;
+    padding: 0 10px;
+  }
+
+  .tests_test_title {
+    font-size: 1.2rem;
+  }
+
+  /* Списки тестов */
+  .tests_tests_list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .tests_test_card {
+    padding: 15px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Шапка теста */
+  .tests_test_header {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px 20px;
+  }
+
+  .tests_test_title_container {
+    text-align: center;
+  }
+
+  /* Текст вопроса */
+  .tests_question {
+    padding: 15px;
+  }
+
+  .tests_question_text {
+    font-size: 1.1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Варианты ответов */
+  .tests_answer_option {
+    padding: 12px 15px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tests_answer_option span {
+    font-size: 14px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .tests_answer_option input[type="radio"],
+  .tests_answer_option input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.1);
+  }
+
+  /* Текстовое поле ответа */
+  .tests_text_answer textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 14px;
+    padding: 12px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Навигация */
+  .tests_navigation {
+    padding: 15px;
+    flex-direction: column;
+  }
+
+  .tests_nav_btn,
+  .tests_complete_btn {
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  /* Результаты */
+  .tests_results {
+    padding: 15px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tests_results_stats {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .tests_stat_card {
+    padding: 20px 15px;
+  }
+
+  /* Разбор теста */
+  .tests_review_question_text {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .tests_review_answer,
+  .tests_review_correct_answer {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Прогресс */
+  .tests_progress {
+    padding: 15px 20px;
+  }
+
+  /* Фильтры и поиск */
+  .tests_filters {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .tests_filter_buttons {
+    flex-wrap: wrap;
+  }
+
+  .tests_filter_btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Еще более мелкие экраны */
+  .tests_directions,
+  .tests_tests,
+  .tests_test_component {
+    padding: 10px;
+  }
+
+  .tests_title {
+    font-size: 1.3rem;
+  }
+
+  .tests_test_title {
+    font-size: 1rem;
+  }
+
+  .tests_question_text {
+    font-size: 1rem;
+  }
+
+  .tests_answer_option span {
+    font-size: 13px;
+  }
+
+  .tests_timer {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+  }
 }
