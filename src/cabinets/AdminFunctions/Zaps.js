@@ -153,6 +153,121 @@ export default function Zaps() {
     );
 }
 
+function CalendarDatePicker({ onDatesChange, initialDates = [] }) {
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+    const [selectedDates, setSelectedDates] = useState(initialDates);
+
+    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+    const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+    const handleDateClick = (day) => {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        setSelectedDates(prev => {
+            const index = prev.indexOf(dateStr);
+            if (index > -1) {
+                return prev.filter(d => d !== dateStr);
+            } else {
+                return [...prev, dateStr].sort();
+            }
+        });
+    };
+
+    useEffect(() => {
+        onDatesChange(selectedDates);
+    }, [selectedDates, onDatesChange]);
+
+    const renderCalendar = () => {
+        const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+        const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+        const days = [];
+        
+        // Пустые ячейки для начала месяца
+        for (let i = 0; i < firstDay - 1; i++) {
+            days.push(null);
+        }
+        
+        // Дни месяца
+        for (let day = 1; day <= daysInMonth; day++) {
+            days.push(day);
+        }
+        
+        return days;
+    };
+
+    const prevMonth = () => {
+        if (currentMonth === 0) {
+            setCurrentMonth(11);
+            setCurrentYear(currentYear - 1);
+        } else {
+            setCurrentMonth(currentMonth - 1);
+        }
+    };
+
+    const nextMonth = () => {
+        if (currentMonth === 11) {
+            setCurrentMonth(0);
+            setCurrentYear(currentYear + 1);
+        } else {
+            setCurrentMonth(currentMonth + 1);
+        }
+    };
+
+    return (
+        <div className="date-picker-calendar">
+            <div className="calendar-header">
+                <button onClick={prevMonth}>←</button>
+                <span>{monthNames[currentMonth]} {currentYear}</span>
+                <button onClick={nextMonth}>→</button>
+            </div>
+            <div className="calendar-weekdays">
+                <div>Пн</div>
+                <div>Вт</div>
+                <div>Ср</div>
+                <div>Чт</div>
+                <div>Пт</div>
+                <div>Сб</div>
+                <div>Вс</div>
+            </div>
+            <div className="calendar-grid">
+                {renderCalendar().map((day, index) => {
+                    if (day === null) {
+                        return <div key={index} className="calendar-day empty"></div>;
+                    }
+                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const isSelected = selectedDates.includes(dateStr);
+                    const isSunday = new Date(currentYear, currentMonth, day).getDay() === 0;
+                    
+                    return (
+                        <div
+                            key={index}
+                            className={`calendar-day ${isSelected ? 'selected' : ''} ${isSunday ? 'sunday' : ''}`}
+                            onClick={() => !isSunday && handleDateClick(day)}
+                        >
+                            {day}
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="selected-dates-list">
+                <strong>Выбранные даты:</strong>
+                {selectedDates.length > 0 ? (
+                    <div className="dates-tags">
+                        {selectedDates.map(date => (
+                            <span key={date} className="date-tag">{date}</span>
+                        ))}
+                    </div>
+                ) : (
+                    <span style={{ color: '#666' }}>Не выбрано</span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function FileViewerModal({ file, currentIndex, totalFiles, onClose, onNext, onPrev }) {
     const [zoom, setZoom] = useState(1);
     const isPDF = file && (file.file_type === 'application/pdf' || (file.img_base64 && file.img_base64.includes('data:application/pdf')));
@@ -240,9 +355,10 @@ function ZapDetail({ zap, onBack, onRefresh }) {
     const [processing, setProcessing] = useState(false);
     const [action, setAction] = useState('apr'); // 'apr' or 'dec'
     const [answer, setAnswer] = useState('');
-    const [dates, setDates] = useState('');
-    const [showDatesInput, setShowDatesInput] = useState(false);
+    const [selectedDates, setSelectedDates] = useState([]);
     const [viewingFile, setViewingFile] = useState(null); // {index, file}
+    
+    const isProcessed = zap.zap.status !== 'set'; // Проверяем, обработан ли уже запрос
 
     const handleProcess = async () => {
         if (!answer.trim()) {
@@ -250,22 +366,18 @@ function ZapDetail({ zap, onBack, onRefresh }) {
             return;
         }
 
-        if (action === 'apr' && !dates.trim()) {
-            alert('Укажите даты для привязки');
+        if (action === 'apr' && selectedDates.length === 0) {
+            alert('Выберите даты для привязки');
             return;
         }
 
         setProcessing(true);
         try {
-            const datesArray = action === 'apr' 
-                ? dates.split(',').map(d => d.trim()).filter(d => d)
-                : [];
-
             const response = await axios.post(`${API_BASE_URL}/api/process-zap`, {
                 zap_id: zap.zap.id,
                 status: action,
                 answer: answer,
-                dates: datesArray
+                dates: selectedDates
             });
 
             if (response.data.status) {
@@ -295,7 +407,6 @@ function ZapDetail({ zap, onBack, onRefresh }) {
                     <h3>Информация о студенте</h3>
                     <p><strong>Имя:</strong> {zap.zap.full_name}</p>
                     <p><strong>ID:</strong> {zap.zap.student_id}</p>
-                    <p><strong>Дата создания:</strong> {new Date(zap.zap.created_at).toLocaleString('ru-RU')}</p>
                 </div>
 
                 <div className="detail-section">
@@ -361,63 +472,65 @@ function ZapDetail({ zap, onBack, onRefresh }) {
                     />
                 )}
 
-                <div className="detail-section">
-                    <h3>Обработка запроса</h3>
-                    
-                    <div className="action-buttons">
-                        <button 
-                            className={action === 'apr' ? 'btn-action active' : 'btn-action'}
-                            onClick={() => {
-                                setAction('apr');
-                                setShowDatesInput(true);
-                            }}
-                        >
-                            Одобрить
-                        </button>
-                        <button 
-                            className={action === 'dec' ? 'btn-action active' : 'btn-action'}
-                            onClick={() => {
-                                setAction('dec');
-                                setShowDatesInput(false);
-                            }}
-                        >
-                            Отклонить
-                        </button>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Ваш ответ:</label>
-                        <textarea
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                            rows="4"
-                            placeholder="Введите ответ..."
-                        />
-                    </div>
-
-                    {showDatesInput && (
-                        <div className="form-group">
-                            <label>Даты для привязки (через запятую, формат YYYY-MM-DD):</label>
-                            <input
-                                type="text"
-                                value={dates}
-                                onChange={(e) => setDates(e.target.value)}
-                                placeholder="2025-01-15, 2025-01-16"
-                            />
-                            <div className="help-text">
-                                Укажите даты, к которым будет привязан отгул
-                            </div>
+                {zap.zap.answer && (
+                    <div className="detail-section">
+                        <h3>Ответ на запрос</h3>
+                        <div className="zap-answer-display">
+                            <p><strong>Статус:</strong> {zap.zap.status === 'apr' ? '✅ Одобрено' : '❌ Отклонено'}</p>
+                            <p><strong>Ответ:</strong></p>
+                            <div className="zap-text">{zap.zap.answer}</div>
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    <button 
-                        className="btn-process"
-                        onClick={handleProcess}
-                        disabled={processing}
-                    >
-                        {processing ? 'Обработка...' : 'Обработать запрос'}
-                    </button>
-                </div>
+                {!isProcessed && (
+                    <div className="detail-section">
+                        <h3>Обработка запроса</h3>
+                        
+                        <div className="action-buttons">
+                            <button 
+                                className={action === 'apr' ? 'btn-action active' : 'btn-action'}
+                                onClick={() => setAction('apr')}
+                            >
+                                Одобрить
+                            </button>
+                            <button 
+                                className={action === 'dec' ? 'btn-action active' : 'btn-action'}
+                                onClick={() => setAction('dec')}
+                            >
+                                Отклонить
+                            </button>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Ваш ответ:</label>
+                            <textarea
+                                value={answer}
+                                onChange={(e) => setAnswer(e.target.value)}
+                                rows="4"
+                                placeholder="Введите ответ..."
+                            />
+                        </div>
+
+                        {action === 'apr' && (
+                            <div className="form-group">
+                                <label>Выберите даты для привязки:</label>
+                                <CalendarDatePicker 
+                                    onDatesChange={setSelectedDates}
+                                    initialDates={selectedDates}
+                                />
+                            </div>
+                        )}
+
+                        <button 
+                            className="btn-process"
+                            onClick={handleProcess}
+                            disabled={processing}
+                        >
+                            {processing ? 'Обработка...' : 'Обработать запрос'}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
