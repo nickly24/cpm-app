@@ -3,6 +3,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../Config';
 import './CreateZap.css';
 
+
 export default function CreateZap({ onBack }) {
     const [text, setText] = useState('');
     const [images, setImages] = useState([]);
