@@ -196,6 +196,15 @@ h2 {
     transform: scale(1.05);
 }
 
+.image-item iframe {
+    display: block;
+    margin: 0 auto;
+}
+
+.image-item:has(iframe) {
+    grid-column: span 2;
+}
+
 .action-buttons {
     display: flex;
     gap: 10px;
