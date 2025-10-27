@@ -175,7 +175,7 @@ function FileViewerModal({ file, currentIndex, totalFiles, onClose, onNext, onPr
 
     return (
         <div className="file-viewer-overlay" onClick={onClose}>
-            <div className="file-viewer-modal" onClick={(e) => e.stopPropagation()}>
+            <div className={`file-viewer-modal ${isPDF ? 'pdf-viewer' : ''}`} onClick={(e) => e.stopPropagation()}>
                 <div className="file-viewer-header">
                     <span>Файл {currentIndex + 1} из {totalFiles}</span>
                     {!isPDF && (
@@ -186,6 +186,9 @@ function FileViewerModal({ file, currentIndex, totalFiles, onClose, onNext, onPr
                             <button onClick={handleResetZoom}>Reset</button>
                         </div>
                     )}
+                    {isPDF && (
+                        <div className="pdf-info">PDF документ</div>
+                    )}
                     <button className="close-btn" onClick={onClose}>✕</button>
                 </div>
                 <div className="file-viewer-content">
@@ -194,7 +197,7 @@ function FileViewerModal({ file, currentIndex, totalFiles, onClose, onNext, onPr
                             src={file.img_base64}
                             style={{
                                 width: '100%',
-                                height: 'calc(100vh - 150px)',
+                                height: 'calc(100vh - 180px)',
                                 border: 'none'
                             }}
                             title="PDF Viewer"

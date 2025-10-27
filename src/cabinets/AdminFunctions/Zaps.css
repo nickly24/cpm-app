@@ -451,3 +451,16 @@ h2 {
     font-weight: bold;
 }
 
+.pdf-viewer {
+    width: 98%;
+    max-width: 1600px;
+}
+
+.pdf-info {
+    font-weight: bold;
+    color: #856404;
+    background: #fff3cd;
+    padding: 5px 12px;
+    border-radius: 4px;
+}
+
