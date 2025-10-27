@@ -153,12 +153,93 @@ export default function Zaps() {
     );
 }
 
+function FileViewerModal({ file, currentIndex, totalFiles, onClose, onNext, onPrev }) {
+    const [zoom, setZoom] = useState(1);
+    const isPDF = file && file.img_base64 && file.img_base64.includes('data:application/pdf');
+
+    const handleZoomIn = () => {
+        if (zoom < 3) {
+            setZoom(zoom + 0.25);
+        }
+    };
+
+    const handleZoomOut = () => {
+        if (zoom > 0.5) {
+            setZoom(zoom - 0.25);
+        }
+    };
+
+    const handleResetZoom = () => {
+        setZoom(1);
+    };
+
+    return (
+        <div className="file-viewer-overlay" onClick={onClose}>
+            <div className="file-viewer-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="file-viewer-header">
+                    <span>Файл {currentIndex + 1} из {totalFiles}</span>
+                    {!isPDF && (
+                        <div className="zoom-controls">
+                            <button onClick={handleZoomOut} disabled={zoom <= 0.5}>−</button>
+                            <span>{Math.round(zoom * 100)}%</span>
+                            <button onClick={handleZoomIn} disabled={zoom >= 3}>+</button>
+                            <button onClick={handleResetZoom}>Reset</button>
+                        </div>
+                    )}
+                    <button className="close-btn" onClick={onClose}>✕</button>
+                </div>
+                <div className="file-viewer-content">
+                    {isPDF ? (
+                        <iframe
+                            src={file.img_base64}
+                            style={{
+                                width: '100%',
+                                height: 'calc(100vh - 150px)',
+                                border: 'none'
+                            }}
+                            title="PDF Viewer"
+                        />
+                    ) : (
+                        <img 
+                            src={file.img_base64}
+                            alt="File"
+                            style={{
+                                transform: `scale(${zoom})`,
+                                transition: 'transform 0.3s',
+                                maxWidth: '100%',
+                                height: 'auto'
+                            }}
+                        />
+                    )}
+                </div>
+                <div className="file-viewer-footer">
+                    <button 
+                        onClick={onPrev}
+                        disabled={currentIndex === 0}
+                        className="nav-btn"
+                    >
+                        ← Предыдущий
+                    </button>
+                    <button 
+                        onClick={onNext}
+                        disabled={currentIndex === totalFiles - 1}
+                        className="nav-btn"
+                    >
+                        Следующий →
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ZapDetail({ zap, onBack, onRefresh }) {
     const [processing, setProcessing] = useState(false);
     const [action, setAction] = useState('apr'); // 'apr' or 'dec'
     const [answer, setAnswer] = useState('');
     const [dates, setDates] = useState('');
     const [showDatesInput, setShowDatesInput] = useState(false);
+    const [viewingFile, setViewingFile] = useState(null); // {index, file}
 
     const handleProcess = async () => {
         if (!answer.trim()) {
@@ -226,24 +307,22 @@ function ZapDetail({ zap, onBack, onRefresh }) {
                             {zap.images.map((img, index) => {
                                 const isPDF = img.img_base64 && img.img_base64.includes('data:application/pdf');
                                 return (
-                                    <div key={index} className="image-item">
+                                    <div 
+                                        key={index} 
+                                        className="image-item"
+                                        onClick={() => setViewingFile({ index, file: img })}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         {img.img_base64 && (
                                             isPDF ? (
-                                                <iframe
-                                                    src={img.img_base64}
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '300px',
-                                                        border: '1px solid #ddd',
-                                                        borderRadius: '4px'
-                                                    }}
-                                                    title={`PDF ${index + 1}`}
-                                                />
+                                                <div className="pdf-thumbnail">
+                                                    <div className="pdf-icon">📄</div>
+                                                    <div className="pdf-label">PDF документ</div>
+                                                </div>
                                             ) : (
                                                 <img 
                                                     src={img.img_base64} 
                                                     alt={`Фото ${index + 1}`}
-                                                    onClick={() => window.open(img.img_base64, '_blank')}
                                                 />
                                             )
                                         )}
@@ -252,6 +331,31 @@ function ZapDetail({ zap, onBack, onRefresh }) {
                             })}
                         </div>
                     </div>
+                )}
+
+                {viewingFile && (
+                    <FileViewerModal 
+                        file={viewingFile.file}
+                        currentIndex={viewingFile.index}
+                        totalFiles={zap.images.length}
+                        onClose={() => setViewingFile(null)}
+                        onNext={() => {
+                            if (viewingFile.index < zap.images.length - 1) {
+                                setViewingFile({
+                                    index: viewingFile.index + 1,
+                                    file: zap.images[viewingFile.index + 1]
+                                });
+                            }
+                        }}
+                        onPrev={() => {
+                            if (viewingFile.index > 0) {
+                                setViewingFile({
+                                    index: viewingFile.index - 1,
+                                    file: zap.images[viewingFile.index - 1]
+                                });
+                            }
+                        }}
+                    />
                 )}
 
                 <div className="detail-section">
