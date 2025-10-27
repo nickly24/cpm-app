@@ -155,7 +155,7 @@ export default function Zaps() {
 
 function FileViewerModal({ file, currentIndex, totalFiles, onClose, onNext, onPrev }) {
     const [zoom, setZoom] = useState(1);
-    const isPDF = file && file.img_base64 && file.img_base64.includes('data:application/pdf');
+    const isPDF = file && (file.file_type === 'application/pdf' || (file.img_base64 && file.img_base64.includes('data:application/pdf')));
 
     const handleZoomIn = () => {
         if (zoom < 3) {
@@ -305,7 +305,7 @@ function ZapDetail({ zap, onBack, onRefresh }) {
                         <h3>Прикрепленные файлы</h3>
                         <div className="images-grid">
                             {zap.images.map((img, index) => {
-                                const isPDF = img.img_base64 && img.img_base64.includes('data:application/pdf');
+                                const isPDF = img.file_type === 'application/pdf' || (img.img_base64 && img.img_base64.includes('data:application/pdf'));
                                 return (
                                     <div 
                                         key={index} 
