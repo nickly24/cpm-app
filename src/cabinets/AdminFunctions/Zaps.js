@@ -221,19 +221,35 @@ function ZapDetail({ zap, onBack, onRefresh }) {
 
                 {zap.images && zap.images.length > 0 && (
                     <div className="detail-section">
-                        <h3>Прикрепленные фото</h3>
+                        <h3>Прикрепленные файлы</h3>
                         <div className="images-grid">
-                            {zap.images.map((img, index) => (
-                                <div key={index} className="image-item">
-                                    {img.img_base64 && (
-                                        <img 
-                                            src={img.img_base64} 
-                                            alt={`Фото ${index + 1}`}
-                                            onClick={() => window.open(img.img_base64, '_blank')}
-                                        />
-                                    )}
-                                </div>
-                            ))}
+                            {zap.images.map((img, index) => {
+                                const isPDF = img.img_base64 && img.img_base64.includes('data:application/pdf');
+                                return (
+                                    <div key={index} className="image-item">
+                                        {img.img_base64 && (
+                                            isPDF ? (
+                                                <iframe
+                                                    src={img.img_base64}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '300px',
+                                                        border: '1px solid #ddd',
+                                                        borderRadius: '4px'
+                                                    }}
+                                                    title={`PDF ${index + 1}`}
+                                                />
+                                            ) : (
+                                                <img 
+                                                    src={img.img_base64} 
+                                                    alt={`Фото ${index + 1}`}
+                                                    onClick={() => window.open(img.img_base64, '_blank')}
+                                                />
+                                            )
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}

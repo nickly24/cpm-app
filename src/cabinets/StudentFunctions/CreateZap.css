@@ -110,6 +110,26 @@ h2 {
     cursor: not-allowed;
 }
 
+.pdf-preview {
+    width: 100%;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+}
+
+.pdf-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.pdf-name {
+    font-size: 14px;
+    color: #666;
+}
+
 .form-actions {
     display: flex;
     gap: 10px;

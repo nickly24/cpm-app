@@ -17,10 +17,10 @@ export default function CreateZap({ onBack }) {
         const files = Array.from(e.target.files);
         
         files.forEach(file => {
-            // Проверяем формат файла (jpg, jpeg, heic)
-            const validFormats = ['image/jpeg', 'image/jpg', 'image/heic'];
+            // Проверяем формат файла (jpg, jpeg, heic, pdf)
+            const validFormats = ['image/jpeg', 'image/jpg', 'image/heic', 'application/pdf'];
             if (!validFormats.includes(file.type)) {
-                setError('Поддерживаются только форматы JPG и HEIC');
+                setError('Поддерживаются только форматы JPG, HEIC и PDF');
                 return;
             }
 
@@ -34,8 +34,9 @@ export default function CreateZap({ onBack }) {
             reader.onload = (e) => {
                 setImages(prev => [...prev, {
                     file: file,
-                    preview: URL.createObjectURL(file),
-                    base64: e.target.result
+                    preview: file.type === 'application/pdf' ? null : URL.createObjectURL(file),
+                    base64: e.target.result,
+                    isPDF: file.type === 'application/pdf'
                 }]);
             };
             reader.readAsDataURL(file);
@@ -119,21 +120,28 @@ export default function CreateZap({ onBack }) {
                     <label>Фотографии справок (необязательно):</label>
                     <input
                         type="file"
-                        accept="image/jpeg,image/jpg,image/heic"
+                        accept="image/jpeg,image/jpg,image/heic,application/pdf"
                         multiple
                         onChange={handleFileChange}
                         disabled={isLoading}
                     />
-                    <div className="help-text">Можно загрузить несколько фото. Форматы: JPG, HEIC. Макс. размер: 5MB</div>
+                    <div className="help-text">Можно загрузить несколько файлов. Форматы: JPG, HEIC, PDF. Макс. размер: 5MB</div>
                 </div>
 
                 {images.length > 0 && (
                     <div className="images-preview">
-                        <h3>Загруженные фото:</h3>
+                        <h3>Загруженные файлы:</h3>
                         <div className="images-grid">
                             {images.map((img, index) => (
                                 <div key={index} className="image-item">
-                                    <img src={img.preview} alt={`Фото ${index + 1}`} />
+                                    {img.isPDF ? (
+                                        <div className="pdf-preview">
+                                            <div className="pdf-icon">📄</div>
+                                            <div className="pdf-name">PDF документ</div>
+                                        </div>
+                                    ) : (
+                                        <img src={img.preview} alt={`Фото ${index + 1}`} />
+                                    )}
                                     <button
                                         type="button"
                                         onClick={() => removeImage(index)}
