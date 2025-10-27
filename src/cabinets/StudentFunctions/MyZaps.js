@@ -50,14 +50,6 @@ export default function MyZaps({ onBack, onCreateNew }) {
         }
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    };
 
     if (loading) {
         return <div className="loading">Загрузка...</div>;
@@ -101,8 +93,8 @@ export default function MyZaps({ onBack, onCreateNew }) {
                                     </span>
                                 </div>
                                 
-                                <div className="zap-date">
-                                    {formatDate(zap.created_at)}
+                                <div className="zap-id">
+                                    Запрос #{zap.id}
                                 </div>
 
                                 <div className="zap-text">
