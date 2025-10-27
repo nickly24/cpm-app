@@ -68,25 +68,39 @@ export default function StudentAttendance() {
 
     const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-    const groupedDays = [];
-    let currentWeek = Array(7).fill(null);
-    
+    // Создаем Map для быстрого доступа к данным посещаемости
+    const attendanceMap = new Map();
     attendanceData.forEach(day => {
         const dateObj = new Date(day.date);
+        const dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+        attendanceMap.set(dateKey, day);
+    });
+
+    // Формируем полный календарь месяца
+    const groupedDays = [];
+    const daysInMonth = new Date(year, month, 0).getDate(); // Количество дней в месяце
+    let currentWeek = Array(7).fill(null);
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(year, month - 1, day);
         let dayOfWeek = dateObj.getDay() - 1;
         if (dayOfWeek === -1) dayOfWeek = 6;
         
-        if (dateObj.getDate() === 1 && groupedDays.length === 0) {
-            currentWeek = Array(dayOfWeek).fill(null).concat([day]);
-        } else {
-            currentWeek[dayOfWeek] = day;
-        }
+        const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const attendanceDay = attendanceMap.get(dateKey);
         
-        if (dayOfWeek === 6 || dateObj.getDate() === new Date(year, month, 0).getDate()) {
+        currentWeek[dayOfWeek] = attendanceDay || {
+            date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+            attendance_rate: null
+        };
+        
+        if (dayOfWeek === 6 || day === daysInMonth) {
             groupedDays.push([...currentWeek]);
-            currentWeek = Array(7).fill(null);
+            if (day !== daysInMonth) {
+                currentWeek = Array(7).fill(null);
+            }
         }
-    });
+    }
 
     return (
         <div className="attendance-container">
@@ -140,11 +154,11 @@ export default function StudentAttendance() {
                             }
                             
                             const isSunday = new Date(day.date).getDay() === 0;
-                            const rate = day.attendance_rate || 1;
+                            const rate = day.attendance_rate;
                             let dayClass = 'absent';
                             let titleText = 'Отсутствовал';
                             
-                            if (!isSunday) {
+                            if (!isSunday && rate !== null && rate !== undefined) {
                                 if (rate === 2) {
                                     dayClass = 'valid';
                                     titleText = 'Уважительная причина';
@@ -152,7 +166,7 @@ export default function StudentAttendance() {
                                     dayClass = 'present';
                                     titleText = 'Присутствовал';
                                 }
-                            } else {
+                            } else if (isSunday) {
                                 dayClass = 'sunday';
                                 titleText = 'Воскресенье';
                             }
