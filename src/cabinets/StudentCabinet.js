@@ -8,6 +8,7 @@ import StudendAttendance from './StudentFunctions/StudentAttendance';
 import Progress from './StudentFunctions/Progress';
 import Training from './StudentFunctions/Training';
 import StudentSchedule from './StudentFunctions/StudentSchedule';
+import ZapsContainer from './StudentFunctions/ZapsContainer';
 const StudentCabinet = () => {
   const studentName = localStorage.getItem('full_name') || 'Студент';
   const groupId = localStorage.getItem('group_id') || 'не указана';
@@ -63,6 +64,8 @@ const StudentCabinet = () => {
         return <Training/>  
       case 'schedule':
         return <StudentSchedule/>
+      case 'zaps':
+        return <ZapsContainer/>
       default:
         return <Progress/>
     }
@@ -161,6 +164,15 @@ const StudentCabinet = () => {
               }}
             >
               Расписание
+            </button>
+            <button 
+              className={`nav-button ${activeComponent === 'zaps' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveComponent('zaps');
+                setIsMenuOpen(false);
+              }}
+            >
+              Запросы на отгул
             </button>
           </nav>
         </aside>

@@ -107,8 +107,13 @@ export default function Attendance() {
                 <tr key={student.student_id}>
                   <td>{student.full_name}</td>
                   {student.attendance.map((mark, index) => (
-                    <td key={index} className={mark === "+" ? "present" : mark === "-" ? "absent" : "weekend"}>
-                      {mark === "" ? "" : mark}
+                    <td key={index} className={
+                      mark === "✓" ? "valid" : 
+                      mark === "+" ? "present" : 
+                      mark === "-" ? "absent" : 
+                      "weekend"
+                    }>
+                      {mark === "" ? "" : mark === "✓" ? "✓" : mark}
                     </td>
                   ))}
                 </tr>
@@ -188,6 +193,12 @@ export default function Attendance() {
         .absent {
           background-color: #f8d7da;
           color: #721c24;
+          font-weight: bold;
+        }
+
+        .valid {
+          background-color: #fff3cd;
+          color: #856404;
           font-weight: bold;
         }
 

@@ -1,0 +1,153 @@
+.my-zaps-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+h2 {
+    margin: 0;
+    color: #333;
+}
+
+.btn-create {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-create:hover {
+    background: #0056b3;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 16px;
+    color: #666;
+}
+
+.error-container {
+    text-align: center;
+    padding: 40px;
+}
+
+.error {
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.empty-state p {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.zaps-list {
+    display: grid;
+    gap: 20px;
+}
+
+.zap-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.zap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.zap-id {
+    font-weight: bold;
+    color: #333;
+}
+
+.status {
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.zap-date {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.zap-text {
+    margin: 15px 0;
+    color: #333;
+    line-height: 1.6;
+}
+
+.zap-answer {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-left: 3px solid #007bff;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.zap-answer strong {
+    color: #007bff;
+}
+
+.footer-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.footer-actions button {
+    padding: 10px 30px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.footer-actions button:hover {
+    background: #5a6268;
+}
+

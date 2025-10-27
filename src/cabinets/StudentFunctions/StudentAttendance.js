@@ -140,13 +140,28 @@ export default function StudentAttendance() {
                             }
                             
                             const isSunday = new Date(day.date).getDay() === 0;
-                            const dayClass = isSunday ? 'sunday' : (day.was_present ? 'present' : 'absent');
+                            const rate = day.attendance_rate || 1;
+                            let dayClass = 'absent';
+                            let titleText = 'Отсутствовал';
+                            
+                            if (!isSunday) {
+                                if (rate === 2) {
+                                    dayClass = 'valid';
+                                    titleText = 'Уважительная причина';
+                                } else if (rate === 1) {
+                                    dayClass = 'present';
+                                    titleText = 'Присутствовал';
+                                }
+                            } else {
+                                dayClass = 'sunday';
+                                titleText = 'Воскресенье';
+                            }
                             
                             return (
                                 <div 
                                     key={day.date} 
                                     className={`day ${dayClass}`}
-                                    title={isSunday ? 'Воскресенье' : `${day.date}: ${day.was_present ? 'Присутствовал' : 'Отсутствовал'}`}
+                                    title={titleText}
                                 >
                                     {new Date(day.date).getDate()}
                                 </div>
