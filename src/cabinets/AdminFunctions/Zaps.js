@@ -3,6 +3,8 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../Config';
 import './Zaps.css';
 
+// Компонент календаря для выбора дат
+
 export default function Zaps() {
     const [zaps, setZaps] = useState([]);
     const [loading, setLoading] = useState(true);
