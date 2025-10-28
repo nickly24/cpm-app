@@ -19,6 +19,21 @@ const AdminCabinet = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
+  // Определяем размер экрана
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      // Сбрасываем состояние сворачивания при переходе на мобильный
+      if (window.innerWidth <= 768) {
+        setIsSidebarCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   const adminName = localStorage.getItem('full_name') || 'Администратор';
   const adminId = localStorage.getItem('id');
   
@@ -138,16 +153,19 @@ const AdminCabinet = () => {
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <button 
-            className="sidebar-toggle"
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            title={isSidebarCollapsed ? 'Развернуть' : 'Свернуть'}
-          >
-            <span className="toggle-icon">{isSidebarCollapsed ? '→' : '←'}</span>
-            {!isSidebarCollapsed && <span>Свернуть</span>}
-          </button>
-        </div>
+        {/* Показываем кнопку сворачивания только на больших экранах */}
+        {!isMobile && (
+          <div className="sidebar-footer">
+            <button 
+              className="sidebar-toggle"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? 'Развернуть' : 'Свернуть'}
+            >
+              <span className="toggle-icon">{isSidebarCollapsed ? '→' : '←'}</span>
+              {!isSidebarCollapsed && <span>Свернуть</span>}
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Mobile overlay */}
@@ -163,10 +181,14 @@ const AdminCabinet = () => {
         {/* Header */}
         <header className="admin-header">
           <button 
-            className="mobile-menu-btn"
+            className={`mobile-menu-btn ${isMobileSidebarOpen ? 'active' : ''}`}
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           >
-            <span className="hamburger-icon">☰</span>
+            <span className="burger-icon">
+              <span className={`burger-line ${isMobileSidebarOpen ? 'open' : ''}`}></span>
+              <span className={`burger-line ${isMobileSidebarOpen ? 'open' : ''}`}></span>
+              <span className={`burger-line ${isMobileSidebarOpen ? 'open' : ''}`}></span>
+            </span>
           </button>
 
           <div className="header-title">

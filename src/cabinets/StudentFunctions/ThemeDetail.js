@@ -84,16 +84,34 @@ export default function ThemeDetail({ theme, studentId, onBack, onStartFlashcard
 
   return (
     <div className="theme-detail">
-      <button className="back-button" onClick={onBack}>
-        &larr; Назад
-      </button>
-      
-      <h2>{theme.name}</h2>
-      
-      <div className="progress-summary">
-        Выучено: {learnedCards.length} из {cards.length} карточек
+      <div className="td-header">
+        <div className="td-header-left">
+          <button className="td-back-button" onClick={onBack}>← Назад</button>
+          <div className="td-title-wrap">
+            <h2 className="td-title">{theme.name}</h2>
+            <div className="td-stats">
+              <div className="td-donut">
+                <svg viewBox="0 0 36 36" className="td-donut-svg">
+                  <circle cx="18" cy="18" r="16" fill="transparent" stroke="#e5e7eb" strokeWidth="4"></circle>
+                  <circle cx="18" cy="18" r="16" fill="transparent" stroke="#22c55e" strokeWidth="4" strokeDasharray={`${Math.round((learnedCards.length/(cards.length||1))*100)}, 100`} strokeLinecap="round"></circle>
+                </svg>
+                <div className="td-donut-center">{learnedCards.length}/{cards.length}</div>
+              </div>
+              <div className="td-stats-text">Выучено карточек</div>
+            </div>
+          </div>
+        </div>
+        <div className="td-header-right">
+          <button 
+            className="td-flashcards-button"
+            onClick={onStartFlashcards}
+            disabled={unlearnedCards.length === 0}
+          >
+            ▶ Карточки
+          </button>
+        </div>
       </div>
-      
+
       <div className="cards-section">
         <h3>Невыученные</h3>
         {unlearnedCards.map(card => (
@@ -162,13 +180,7 @@ export default function ThemeDetail({ theme, studentId, onBack, onStartFlashcard
         ))}
       </div>
       
-      <button 
-        className="flashcards-button"
-        onClick={onStartFlashcards}
-        disabled={unlearnedCards.length === 0}
-      >
-        Карточки
-      </button>
+      
     </div>
   );
 }

@@ -10,9 +10,19 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [animationState, setAnimationState] = useState('idle'); // 'idle' | 'flipping' | 'swiping-left' | 'swiping-right'
   const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return localStorage.getItem('flash_onboarding_seen') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   
   const touchStartX = useRef(0);
   const cardRef = useRef(null);
+  const mouseDragging = useRef(false);
+  const mouseStartX = useRef(0);
+  const wasDragging = useRef(false);
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -35,6 +45,11 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
 
   const handleFlip = () => {
     if (animationState !== 'idle') return;
+    if (wasDragging.current) {
+      // Игнорируем клик сразу после драга, чтобы не было нежелательного флипа
+      wasDragging.current = false;
+      return;
+    }
     setAnimationState('flipping');
     setIsFlipped(!isFlipped);
     setTimeout(() => setAnimationState('idle'), 300);
@@ -52,7 +67,8 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
 
   const handleNext = async () => {
     if (animationState !== 'idle') return;
-    
+    setIsFlipped(false);
+    setSwipeOffset(0);
     await animateCardTransition('left');
     setCurrentIndex(prev => (prev + 1) % cards.length);
     setIsFlipped(false);
@@ -60,7 +76,8 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
 
   const handleRemember = async () => {
     if (animationState !== 'idle') return;
-    
+    setIsFlipped(false);
+    setSwipeOffset(0);
     try {
       await animateCardTransition('right');
       
@@ -85,22 +102,57 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
 
   // Touch handlers for swipe
   const handleTouchStart = (e) => {
+    if (showOnboarding) return;
     touchStartX.current = e.touches[0].clientX;
     setSwipeOffset(0);
   };
 
   const handleTouchMove = (e) => {
+    if (showOnboarding) return;
     const deltaX = e.touches[0].clientX - touchStartX.current;
     setSwipeOffset(deltaX);
+    if (Math.abs(deltaX) > 5) wasDragging.current = true;
   };
 
   const handleTouchEnd = () => {
+    if (showOnboarding) return;
     if (swipeOffset > 100) {
       handleRemember();
     } else if (swipeOffset < -100) {
       handleNext();
     }
     setSwipeOffset(0);
+    // Сбрасываем флаг после короткой задержки, чтобы onClick не сработал
+    setTimeout(() => { wasDragging.current = false; }, 0);
+  };
+
+  // Mouse (desktop) swipe support
+  const handleMouseDown = (e) => {
+    if (showOnboarding) return;
+    mouseDragging.current = true;
+    mouseStartX.current = e.clientX;
+    setSwipeOffset(0);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!mouseDragging.current || showOnboarding) return;
+    const deltaX = e.clientX - mouseStartX.current;
+    setSwipeOffset(deltaX);
+    if (Math.abs(deltaX) > 3) wasDragging.current = true;
+  };
+
+  const handleMouseUp = () => {
+    if (!mouseDragging.current || showOnboarding) return;
+    mouseDragging.current = false;
+    if (swipeOffset > 120) {
+      handleRemember();
+    } else if (swipeOffset < -120) {
+      handleNext();
+    } else {
+      setSwipeOffset(0);
+    }
+    // Сбрасываем флаг после короткой задержки, чтобы onClick не сработал
+    setTimeout(() => { wasDragging.current = false; }, 0);
   };
 
   if (cards.length === 0) {
@@ -118,9 +170,47 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
 
   const currentCard = cards[currentIndex];
   const nextCard = cards[(currentIndex + 1) % cards.length];
+  const rotation = Math.max(-15, Math.min(15, (swipeOffset / 15)));
+  const rememberOpacity = Math.min(1, Math.max(0, swipeOffset / 140));
+  const repeatOpacity = Math.min(1, Math.max(0, -swipeOffset / 140));
+  const cardTransform = animationState === 'idle' && swipeOffset
+    ? `translateX(${swipeOffset}px) rotate(${rotation}deg)`
+    : undefined;
 
   return (
     <div className="flashcard-container">
+      <button className="flashcard-back-button" onClick={onBack}>
+        ← Назад к теме
+      </button>
+      {showOnboarding && (
+        <div className="flashcard-onboarding">
+          <div className="onboarding-card">
+            <h3>Как работать с карточками</h3>
+            <ul>
+              <li>Нажми на карточку, чтобы увидеть ответ.</li>
+              <li>
+                Свайп вправо — <strong>запомнил</strong>.
+              </li>
+              <li>
+                Свайп влево — <strong>повторить позже</strong>.
+              </li>
+            </ul>
+            <div className="swipe-hints">
+              <div className="hint-left">⬅ Повторить</div>
+              <div className="hint-right">Запомнил ➡</div>
+            </div>
+            <button
+              className="onboarding-button"
+              onClick={() => {
+                try { localStorage.setItem('flash_onboarding_seen', 'true'); } catch {}
+                setShowOnboarding(false);
+              }}
+            >
+              Понятно
+            </button>
+          </div>
+        </div>
+      )}
       <div className="progress-header">
         Прогресс: {learnedCardsCount} / {cards.length + learnedCardsCount}
       </div>
@@ -144,11 +234,15 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
             ${isFlipped ? 'flipped' : ''} 
             ${animationState === 'swiping-left' ? 'swipe-left' : ''}
             ${animationState === 'swiping-right' ? 'swipe-right' : ''}`}
-          style={{ transform: swipeOffset ? `translateX(${swipeOffset}px)` : '' }}
+          style={{ transform: cardTransform }}
           onClick={handleFlip}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         >
           <div className="flashcard-inner">
             <div className="flashcard-front">
@@ -158,6 +252,13 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
               {currentCard.answer}
             </div>
           </div>
+          {/* Drag badges */}
+          <div className="drag-badge badge-remember" style={{ opacity: rememberOpacity }}>
+            Запомнил
+          </div>
+          <div className="drag-badge badge-repeat" style={{ opacity: repeatOpacity }}>
+            Повторить
+          </div>
         </div>
       </div>
       
@@ -166,21 +267,19 @@ export default function FlashcardMode({ theme, studentId, onBack }) {
           className="control-button remember-button"
           onClick={handleRemember}
           disabled={animationState !== 'idle'}
+          aria-label="Запомнил"
         >
-          Запомнил
+          ✅
         </button>
         <button 
           className="control-button next-button"
           onClick={handleNext}
           disabled={animationState !== 'idle'}
+          aria-label="Повторить позже"
         >
-          Дальше
+          ❌
         </button>
       </div>
-      
-      <button className="back-button" onClick={onBack}>
-        &larr; Назад
-      </button>
     </div>
   );
 }

@@ -1,0 +1,75 @@
+.sc-hw-container{ width:100%; }
+.sc-hw-loading,.sc-hw-error{ padding:20px; text-align:center; color:#475569; }
+
+.sc-hw-toolbar{ display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.sc-hw-breadcrumbs{ display:flex; align-items:center; gap:6px; color:#64748b; }
+.sc-hw-crumb{ font-size:14px; }
+.sc-hw-crumb.sep{ color:#94a3b8; }
+.sc-hw-crumb.active{ color:#0f172a; font-weight:600; }
+.sc-hw-filters{ display:flex; gap:8px; }
+.sc-hw-select{ padding:8px 10px; border:1px solid rgba(2,6,23,0.06); border-radius:8px; background:#ffffff; }
+
+.sc-hw-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap:20px;
+}
+
+@media (max-width: 640px){
+  .sc-hw-grid{
+    grid-template-columns: 1fr;
+    gap:16px;
+  }
+  .sc-hw-toolbar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .sc-hw-filters{
+    flex-direction:column;
+  }
+}
+
+.sc-hw-card{
+  background:#ffffff;
+  border:1px solid rgba(2,6,23,0.06);
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+}
+
+.sc-hw-card-header{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.sc-hw-avatar{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; font-size:20px; }
+.sc-hw-headings{ display:flex; flex-direction:column; }
+.sc-hw-title{ margin:0; color:#0f172a; font-size:16px; font-weight:600; }
+.sc-hw-subtitle{ color:#64748b; font-size:12px; }
+
+.sc-hw-meta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.sc-hw-badge{ padding:6px 10px; border-radius:999px; background:#f8fafc; color:#0f172a; border:1px solid rgba(2,6,23,0.06); font-size:12px; }
+.sc-hw-type{ background:#eff6ff; color:#075985; border-color:#bae6fd; }
+.sc-hw-deadline{ background:#f8fafc; color:#0f172a; }
+.sc-hw-status.sc-done{ background:#ecfdf5; color:#065f46; border-color:#a7f3d0; }
+.sc-hw-status.sc-undone{ background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
+
+.sc-hw-score{ margin-top:10px; font-weight:600; color:#065f46; }
+
+/* состояния карты по срокам */
+.sc-submitted{ border-left:4px solid #22c55e; }
+.sc-pending{ border-left:4px solid #94a3b8; }
+.sc-warning{ border-left:4px solid #f59e0b; }
+.sc-danger{ border-left:4px solid #ef4444; }
+.sc-critical{ border-left:4px solid #be185d; }
+
+.sc-hw-pagination{ display:flex; align-items:center; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
+.sc-hw-page-btn{ padding:8px 12px; background:#f1f5f9; border:1px solid rgba(2,6,23,0.06); border-radius:8px; cursor:pointer; white-space:nowrap; }
+.sc-hw-page-numbers{ display:flex; gap:6px; flex-wrap:wrap; }
+.sc-hw-page-number{ width:36px; height:36px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(2,6,23,0.06); background:#ffffff; border-radius:8px; cursor:pointer; flex-shrink:0; }
+.sc-hw-page-number.active{ background:#0ea5e9; color:#ffffff; border-color:#0ea5e9; }
+.sc-hw-ellipsis{ padding:0 6px; color:#94a3b8; }
+
+@media (max-width: 640px){
+  .sc-hw-pagination{ gap:6px; }
+  .sc-hw-page-btn{ padding:8px 10px; font-size:14px; }
+  .sc-hw-page-number{ width:32px; height:32px; font-size:14px; }
+}
+
+

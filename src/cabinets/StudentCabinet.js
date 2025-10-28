@@ -3,6 +3,7 @@ import StudentHomeworkList from './StudentFunctions/StudentHomeworkList';
 import MainContent from './StudentFunctions/MainContent';
 import Tests from './StudentFunctions/Tests';
 import { ReactComponent as Logo } from './logo.svg';
+import './StudentCabinetModern.css';
 import Exams from './StudentFunctions/Exams';
 import StudendAttendance from './StudentFunctions/StudentAttendance';
 import Progress from './StudentFunctions/Progress';
@@ -16,8 +17,24 @@ const StudentCabinet = () => {
   
   const [activeComponent, setActiveComponent] = useState('performance');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const sidebarRef = useRef(null);
   const menuButtonRef = useRef(null);
+  
+  // Определяем размер экрана
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      // Сбрасываем состояние сворачивания при переходе на мобильный
+      if (window.innerWidth <= 768) {
+        setIsSidebarCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -72,112 +89,138 @@ const StudentCabinet = () => {
   };
 
   return (
-    <div className="wrapper">
-      <header>
-        <div className="cabinet-head">
-          <div>
-            <Logo/>
+    <div className="sc-wrapper">
+      <header className="sc-header">
+        <div className="sc-header-left">
+          <Logo className="sc-logo"/>
+          <div className="sc-user-meta">
+            <span className="sc-user-name">{studentName}</span>
+            {groupId && <span className="sc-user-group">Группа: {groupId}</span>}
           </div>
-          <div className="header-info">
-          
-              <button onClick={handleLogout} className="logout-button">
-                Выйти
-              </button>
-           
-          </div>
+        </div>
+        <div className="sc-header-right">
+          <button onClick={handleLogout} className="sc-logout-button">
+            Выйти
+          </button>
+          <button 
+            ref={menuButtonRef}
+            className={`sc-mobile-menu-button ${isMenuOpen ? 'sc-is-open' : ''}`}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Открыть меню"
+            aria-expanded={isMenuOpen}
+          >
+            <span className="sc-burger-icon">
+              <span className={`sc-burger-line ${isMenuOpen ? 'open' : ''}`}></span>
+              <span className={`sc-burger-line ${isMenuOpen ? 'open' : ''}`}></span>
+              <span className={`sc-burger-line ${isMenuOpen ? 'open' : ''}`}></span>
+            </span>
+          </button>
         </div>
       </header>
 
-      <button 
-        ref={menuButtonRef}
-        className="mobile-menu-button" 
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-      >
-        {isMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
-      </button>
-
-      <div className="cabinet-container">
+      <div className={`sc-cabinet ${isSidebarCollapsed ? 'sc-with-collapsed' : ''}`}>
         <aside 
           ref={sidebarRef}
-          className={`sidebar ${isMenuOpen ? 'open' : ''}`}
+          className={`sc-sidebar ${isMenuOpen ? 'sc-is-open' : ''} ${isSidebarCollapsed ? 'sc-collapsed' : ''}`}
         >
-          <nav className="sidebar-nav">
+          <nav className="sc-sidebar-nav">
             <button 
-              className={`nav-button ${activeComponent === 'performance' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'performance' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('performance');
                 setIsMenuOpen(false);
               }}
             >
-              Успеваемость
+              <span>📈</span>
+              <span>Успеваемость</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'homework' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'homework' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('homework');
                 setIsMenuOpen(false);
               }}
             >
-              Домашка
+              <span>📝</span>
+              <span>Домашка</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'tests' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'tests' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('tests');
                 setIsMenuOpen(false);
               }}
             >
-              Тесты
+              <span>📊</span>
+              <span>Тесты</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'exams' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'exams' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('exams');
                 setIsMenuOpen(false);
               }}
             >
-              Экзамены
+              <span>🎓</span>
+              <span>Экзамены</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'attendance' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'attendance' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('attendance');
                 setIsMenuOpen(false);
               }}
             >
-              Посещаемость
+              <span>📅</span>
+              <span>Посещаемость</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'train' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'train' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('train');
                 setIsMenuOpen(false);
               }}
             >
-              Тренировка
+              <span>🧠</span>
+              <span>Тренировка</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'schedule' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'schedule' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('schedule');
                 setIsMenuOpen(false);
               }}
             >
-              Расписание
+              <span>📚</span>
+              <span>Расписание</span>
             </button>
             <button 
-              className={`nav-button ${activeComponent === 'zaps' ? 'active' : ''}`}
+              className={`sc-nav-button ${activeComponent === 'zaps' ? 'sc-is-active' : ''}`}
               onClick={() => {
                 setActiveComponent('zaps');
                 setIsMenuOpen(false);
               }}
             >
-              Запросы на отгул
+              <span>📋</span>
+              <span>Запросы на отгул</span>
             </button>
           </nav>
+          
+          {/* Кнопка сворачивания на больших экранах */}
+          {!isMobile && (
+            <div className="sc-sidebar-footer">
+              <button 
+                className="sc-sidebar-toggle"
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                title={isSidebarCollapsed ? 'Развернуть' : 'Свернуть'}
+              >
+                {isSidebarCollapsed ? '→' : '← Свернуть'}
+              </button>
+            </div>
+          )}
         </aside>
 
-        <main className="main-content">
+        <main className="sc-main-content">
           {renderComponent()}
         </main>
       </div>

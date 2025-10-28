@@ -9,7 +9,7 @@
 
 /* Sidebar Styles */
 .admin-sidebar {
-  width: 260px;
+  width: 320px;
   background: #2c3e50;
   color: white;
   display: flex;
@@ -21,7 +21,7 @@
 }
 
 .admin-sidebar.collapsed {
-  width: 70px;
+  width: 80px;
 }
 
 .sidebar-header {
@@ -73,12 +73,12 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 14px 20px;
+  padding: 16px 20px;
   margin: 4px 10px;
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 15px;
+  font-size: 17px;
   font-family: 'Montserrat', sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -112,9 +112,9 @@
 }
 
 .nav-icon {
-  font-size: 22px;
+  font-size: 26px;
   flex-shrink: 0;
-  width: 28px;
+  width: 32px;
   text-align: center;
 }
 
@@ -131,6 +131,11 @@
   justify-content: center;
   padding: 14px;
   margin: 4px auto;
+  width: 60px;
+}
+
+.collapsed .nav-icon {
+  font-size: 24px;
 }
 
 /* Sidebar Footer */
@@ -200,9 +205,31 @@
   margin-right: 15px;
 }
 
-.hamburger-icon {
-  font-size: 24px;
-  color: #2c3e50;
+.burger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 24px;
+}
+
+.burger-line {
+  height: 2px;
+  background: #2c3e50;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+  width: 100%;
+}
+
+.mobile-menu-btn.active .burger-line:first-child {
+  transform: rotate(45deg) translate(7px, 7px);
+}
+
+.mobile-menu-btn.active .burger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-btn.active .burger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
 }
 
 .header-title h1 {
@@ -386,7 +413,35 @@
   display: none;
 }
 
+@media (min-width: 1400px) {
+  .admin-sidebar {
+    width: 360px;
+  }
+  
+  .admin-sidebar.collapsed {
+    width: 80px;
+  }
+  
+  /* Увеличиваем текст на широких экранах */
+  .nav-item {
+    font-size: 18px;
+    padding: 18px 22px;
+  }
+  
+  .nav-icon {
+    font-size: 28px;
+  }
+}
+
 @media (max-width: 1024px) {
+  .admin-sidebar {
+    width: 280px;
+  }
+  
+  .admin-sidebar.collapsed {
+    width: 70px;
+  }
+  
   .admin-header {
     padding: 0 20px;
   }
@@ -422,6 +477,16 @@
 
   .admin-sidebar.collapsed {
     width: 260px;
+  }
+
+  /* Увеличиваем текст на мобильных */
+  .nav-item {
+    font-size: 18px;
+    padding: 16px 20px;
+  }
+
+  .nav-icon {
+    font-size: 28px;
   }
 
   .mobile-menu-btn {
