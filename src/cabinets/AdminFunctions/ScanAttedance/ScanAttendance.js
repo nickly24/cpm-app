@@ -115,11 +115,12 @@ export function ScanAttendance() {
     };
 
     // Автоотправка при сканировании штрих-кода
+    // Сканеры вводят строку очень быстро, ждём небольшую паузу и отправляем без проверки длины
     useEffect(() => {
         if (studentId.length > 0) {
             const timer = setTimeout(() => {
                 handleSubmit();
-            }, 300);
+            }, 800);
             
             return () => clearTimeout(timer);
         }
@@ -149,6 +150,12 @@ export function ScanAttendance() {
                         id="studentId"
                         value={studentId}
                         onChange={(e) => setStudentId(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleSubmit();
+                            }
+                        }}
                         disabled={isLoading}
                         autoComplete="off"
                         autoFocus
