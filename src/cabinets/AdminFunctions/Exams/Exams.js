@@ -1,169 +1,207 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API_EXAM_URL } from '../../../Config';
 import './Exams.css';
-import ExamsList from './ExamsList';
+import './ExamsList.css';
+
 export default function Exams() {
-    const [examData, setExamData] = useState({
-        name: '',
-        date: '',
-        questions: [{ question_text: '', correct_answer: '' }]
+    const [examSessions, setExamSessions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedSession, setSelectedSession] = useState(null);
+    const [sortBy, setSortBy] = useState('exam_date');
+    const [filterExam, setFilterExam] = useState('all');
+
+    useEffect(() => {
+        fetchExamSessions();
+    }, []);
+
+    const fetchExamSessions = async () => {
+        try {
+            const response = await axios.get(`${API_EXAM_URL}/get-all-exam-sessions`);
+            if (response.data.status && response.data.sessions) {
+                setExamSessions(response.data.sessions);
+            } else {
+                setError('Не удалось загрузить данные экзаменов');
+            }
+        } catch (err) {
+            setError('Ошибка при загрузке данных');
+            console.error('Error fetching exam sessions:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Дата не указана';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
+    const getGradeColor = (grade) => {
+        if (grade >= 5) return '#2ecc71';
+        if (grade >= 4) return '#3498db';
+        if (grade >= 3) return '#f39c12';
+        return '#e74c3c';
+    };
+
+    const handleSessionClick = (session) => {
+        setSelectedSession(session);
+    };
+
+    const handleBackClick = () => {
+        setSelectedSession(null);
+    };
+
+    // Получаем уникальные экзамены для фильтра
+    const uniqueExams = [...new Set(examSessions.map(s => s.exam_name))];
+    
+    // Фильтруем и сортируем
+    const filteredSessions = filterExam === 'all' 
+        ? examSessions 
+        : examSessions.filter(s => s.exam_name === filterExam);
+    
+    const sortedSessions = [...filteredSessions].sort((a, b) => {
+        if (sortBy === 'student_name') {
+            return a.student_name.localeCompare(b.student_name);
+        }
+        if (sortBy === 'grade') {
+            return b.grade - a.grade;
+        }
+        return new Date(b.exam_date) - new Date(a.exam_date);
     });
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setExamData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+    if (loading) {
+        return <div className="loading">Загрузка...</div>;
+    }
 
-    const handleQuestionChange = (index, e) => {
-        const { name, value } = e.target;
-        const updatedQuestions = [...examData.questions];
-        updatedQuestions[index][name] = value;
-        setExamData(prev => ({
-            ...prev,
-            questions: updatedQuestions
-        }));
-    };
+    if (error) {
+        return <div className="error">{error}</div>;
+    }
 
-    const addQuestion = () => {
-        setExamData(prev => ({
-            ...prev,
-            questions: [...prev.questions, { question_text: '', correct_answer: '' }]
-        }));
-    };
+    // Детальный просмотр
+    if (selectedSession) {
+        return (
+            <div className="exam-details-container">
+                <button className="back-button" onClick={handleBackClick}>
+                    ← Назад к списку
+                </button>
+                
+                <div className="exam-header">
+                    <h2>{selectedSession.exam_name}</h2>
+                    <p className="exam-date">Дата: {formatDate(selectedSession.exam_date)}</p>
+                </div>
 
-    const removeQuestion = (index) => {
-        if (examData.questions.length > 1) {
-            const updatedQuestions = examData.questions.filter((_, i) => i !== index);
-            setExamData(prev => ({
-                ...prev,
-                questions: updatedQuestions
-            }));
-        }
-    };
+                <div className="student-info">
+                    <h3>Информация о студенте</h3>
+                    <p><strong>Имя:</strong> {selectedSession.student_name}</p>
+                    <p><strong>ID:</strong> {selectedSession.student_id}</p>
+                </div>
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        try {
-            const response = await fetch('http://127.0.0.1:81/create-exam', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: examData.name,
-                    date: examData.date,
-                    questions: examData.questions.map(q => ({
-                        question_text: q.question_text,
-                        correct_answer: q.correct_answer
-                    }))
-                })
-            });
-
-            const result = await response.json();
-            if (result.status) {
-                alert('Экзамен успешно создан!');
-                // Сброс формы
-                setExamData({
-                    name: '',
-                    date: '',
-                    questions: [{ question_text: '', correct_answer: '' }]
-                });
-            } else {
-                alert('Ошибка при создании экзамена');
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert('Произошла ошибка при отправке данных');
-        }
-    };
+                <div className="exam-summary">
+                    <div className="summary-item">
+                        <span className="summary-label">Оценка</span>
+                        <span 
+                            className="summary-value" 
+                            style={{ color: getGradeColor(selectedSession.grade) }}
+                        >
+                            {selectedSession.grade}
+                        </span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Баллы</span>
+                        <span className="summary-value">{selectedSession.points}</span>
+                    </div>
+                    {selectedSession.examinator && (
+                        <div className="summary-item">
+                            <span className="summary-label">Экзаменатор</span>
+                            <span className="summary-value">{selectedSession.examinator}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="exam-form-container">
-            <h2>Создание нового экзамена</h2>
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label>
-                        Название экзамена:
-                        <input
-                            type="text"
-                            name="name"
-                            value={examData.name}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </label>
+        <div className="exams-admin-container">
+            <div className="exams-header">
+                <h1>Результаты экзаменов</h1>
+                <div className="exams-controls">
+                    <select 
+                        value={filterExam} 
+                        onChange={(e) => setFilterExam(e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="all">Все экзамены</option>
+                        {uniqueExams.map(exam => (
+                            <option key={exam} value={exam}>{exam}</option>
+                        ))}
+                    </select>
+                    <select 
+                        value={sortBy} 
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="sort-select"
+                    >
+                        <option value="exam_date">По дате</option>
+                        <option value="student_name">По студенту</option>
+                        <option value="grade">По оценке</option>
+                    </select>
                 </div>
-                
-                <div className="form-group">
-                    <label>
-                        Дата проведения:
-                        <input
-                            type="date"
-                            name="date"
-                            value={examData.date}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </label>
+            </div>
+
+            {sortedSessions.length > 0 ? (
+                <div className="exams-table-container">
+                    <table className="exams-table">
+                        <thead>
+                            <tr>
+                                <th>Студент</th>
+                                <th>Экзамен</th>
+                                <th>Дата</th>
+                                <th>Оценка</th>
+                                <th>Баллы</th>
+                                <th>Экзаменатор</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedSessions.map((session) => (
+                                <tr key={session.id}>
+                                    <td>{session.student_name}</td>
+                                    <td>{session.exam_name}</td>
+                                    <td>{formatDate(session.exam_date)}</td>
+                                    <td>
+                                        <span 
+                                            className="grade-badge"
+                                            style={{ color: getGradeColor(session.grade) }}
+                                        >
+                                            {session.grade}
+                                        </span>
+                                    </td>
+                                    <td>{session.points}</td>
+                                    <td>{session.examinator || '-'}</td>
+                                    <td>
+                                        <button 
+                                            className="view-button"
+                                            onClick={() => handleSessionClick(session)}
+                                        >
+                                            Подробнее
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-                
-                <h3>Вопросы:</h3>
-                {examData.questions.map((question, index) => (
-                    <div key={index} className="question-group">
-                        <div className="form-group">
-                            <label>
-                                Вопрос:
-                                <input
-                                    type="text"
-                                    name="question_text"
-                                    value={question.question_text}
-                                    onChange={(e) => handleQuestionChange(index, e)}
-                                    required
-                                />
-                            </label>
-                        </div>
-                        
-                        <div className="form-group">
-                            <label>
-                                Правильный ответ:
-                                <input
-                                    type="text"
-                                    name="correct_answer"
-                                    value={question.correct_answer}
-                                    onChange={(e) => handleQuestionChange(index, e)}
-                                    required
-                                />
-                            </label>
-                        </div>
-                        
-                        {examData.questions.length > 1 && (
-                            <button
-                                type="button"
-                                onClick={() => removeQuestion(index)}
-                                className="remove-btn"
-                            >
-                                
-                            </button>
-                        )}
-                    </div>
-                ))}
-                
-                <button
-                    type="button"
-                    onClick={addQuestion}
-                    className="add-btn"
-                >
-                    Добавить вопрос
-                </button>
-                
-                <button type="submit" className="submit-btn">
-                    Создать экзамен
-                </button>
-            </form>
-            <ExamsList/>
+            ) : (
+                <div className="no-exams">
+                    <p>Нет доступных результатов экзаменов</p>
+                </div>
+            )}
         </div>
     );
 }

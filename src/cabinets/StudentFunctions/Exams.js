@@ -2,73 +2,64 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './ExamsList.css';
 import { API_EXAM_URL } from '../../Config';
+
 const Exams = () => {
-  const [exams, setExams] = useState([]);
+  const [examSessions, setExamSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [examDetails, setExamDetails] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' или 'details'
+  const [selectedSession, setSelectedSession] = useState(null);
+
+  const studentId = localStorage.getItem('id');
 
   useEffect(() => {
-    const fetchExams = async () => {
+    const fetchExamSessions = async () => {
       try {
-        const response = await axios.get(`${API_EXAM_URL}/get-all-exams`);
-        if (response.data.status && response.data.exams) {
-          setExams(response.data.exams);
+        if (!studentId) {
+          setError('ID студента не найден');
+          setLoading(false);
+          return;
+        }
+
+        const response = await axios.get(`${API_EXAM_URL}/get-student-exam-sessions/${studentId}`);
+        if (response.data.status && response.data.sessions) {
+          setExamSessions(response.data.sessions);
         } else {
           setError('Не удалось загрузить данные экзаменов');
         }
       } catch (err) {
         setError('Ошибка при загрузке данных');
-        console.error('Error fetching exams:', err);
+        console.error('Error fetching exam sessions:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExams();
-  }, []);
-
-  const handleExamClick = async (examId) => {
-    try {
-      const studentId = localStorage.getItem('id');
-      if (!studentId) {
-        setError('ID студента не найден');
-        return;
-      }
-
-      setLoading(true);
-      const response = await axios.post(`${API_EXAM_URL}/get-exam-session`, {
-        student_id: studentId,
-        exam_id: examId
-      });
-
-      if (response.data.status) {
-        setExamDetails(response.data);
-        setViewMode('details');
-      } else {
-        setError('Не удалось загрузить данные экзамена');
-      }
-    } catch (err) {
-      setError('Ошибка при загрузке данных экзамена');
-      console.error('Error fetching exam details:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBackClick = () => {
-    setViewMode('list');
-    setExamDetails(null);
-  };
+    fetchExamSessions();
+  }, [studentId]);
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Дата не указана';
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     });
+  };
+
+  const getGradeColor = (grade) => {
+    if (grade >= 5) return '#2ecc71';
+    if (grade >= 4) return '#3498db';
+    if (grade >= 3) return '#f39c12';
+    return '#e74c3c';
+  };
+
+  const handleSessionClick = (session) => {
+    setSelectedSession(session);
+  };
+
+  const handleBackClick = () => {
+    setSelectedSession(null);
   };
 
   if (loading) {
@@ -79,28 +70,39 @@ const Exams = () => {
     return <div className="error">{error}</div>;
   }
 
-  if (viewMode === 'details' && examDetails) {
+  // Если выбран сессия, показываем детали
+  if (selectedSession) {
     return (
       <div className="exam-details-container">
         <button className="back-button" onClick={handleBackClick}>
-          Назад к списку экзаменов
+          ← Назад к списку экзаменов
         </button>
         
-        <h2>Результаты экзамена</h2>
-        <div className="exam-summary">
-          <p><strong>Оценка:</strong> {parseInt(examDetails.grade)}</p>
-          <p><strong>Баллы:</strong> {parseInt(examDetails.score)}</p>
+        <div className="exam-header">
+          <h2>{selectedSession.exam_name}</h2>
+          <p className="exam-date">Дата: {formatDate(selectedSession.exam_date)}</p>
         </div>
 
-        <div className="questions-list">
-          <h3>Вопросы и ответы:</h3>
-          {examDetails.answers.map((answer, index) => (
-            <div key={answer.question_id} className="question-item">
-              <p><strong>Вопрос {index + 1}:</strong> {answer.question}</p>
-              <p><strong>Правильный ответ:</strong> {answer.correct_answer}</p>
-              <p><strong>Результат:</strong> {parseInt(answer.result)} баллов</p>
+        <div className="exam-summary">
+          <div className="summary-item">
+            <span className="summary-label">Оценка</span>
+            <span 
+              className="summary-value" 
+              style={{ color: getGradeColor(selectedSession.grade) }}
+            >
+              {selectedSession.grade}
+            </span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">Баллы</span>
+            <span className="summary-value">{selectedSession.points}</span>
+          </div>
+          {selectedSession.examinator && (
+            <div className="summary-item">
+              <span className="summary-label">Экзаменатор</span>
+              <span className="summary-value">{selectedSession.examinator}</span>
             </div>
-          ))}
+          )}
         </div>
       </div>
     );
@@ -108,23 +110,33 @@ const Exams = () => {
 
   return (
     <div className="exams-container">
-      <h1>Список экзаменов</h1>
-      <div className="exams-list">
-        {exams.length > 0 ? (
-          exams.map((exam) => (
+      <h1>Мои экзамены</h1>
+      {examSessions.length > 0 ? (
+        <div className="exams-list">
+          {examSessions.map((session) => (
             <div 
-              key={exam.id} 
+              key={session.id} 
               className="exam-card"
-              onClick={() => handleExamClick(exam.id)}
+              onClick={() => handleSessionClick(session)}
             >
-              <h3>{exam.name}</h3>
-              <p className='redc'>{formatDate(exam.date)}</p>
+              <div className="exam-card-content">
+                <h3>{session.exam_name}</h3>
+                <p className="exam-card-date">Дата: {formatDate(session.exam_date)}</p>
+                <div className="exam-card-grade" style={{ color: getGradeColor(session.grade) }}>
+                  Оценка: {session.grade}
+                </div>
+                <div className="exam-card-points">
+                  Баллы: {session.points}
+                </div>
+              </div>
             </div>
-          ))
-        ) : (
-          <p>Нет доступных экзаменов</p>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="no-exams">
+          <p>У вас пока нет сданных экзаменов</p>
+        </div>
+      )}
     </div>
   );
 };

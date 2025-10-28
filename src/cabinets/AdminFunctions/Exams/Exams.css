@@ -1,117 +1,248 @@
 /* Exams.css */
 
-.exam-form-container {
-    max-width: 800px;
+.exams-admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.exams-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.exams-header h1 {
+    color: #2c3e50;
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.exams-controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-select,
+.sort-select {
+    padding: 10px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    min-width: 180px;
+}
+
+.filter-select:focus,
+.sort-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.exams-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.exams-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.exams-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.exams-table th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.exams-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+}
+
+.exams-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.exams-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #333;
+}
+
+.grade-badge {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.view-button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.view-button:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 18px;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+.no-exams {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+/* Стили для детального просмотра */
+.exam-details-container {
+    max-width: 900px;
     margin: 0 auto;
     padding: 20px;
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.exam-form-container h2 {
-    color: #2c3e50;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.exam-form-container h3 {
-    color: #2c3e50;
-    margin-top: 25px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 5px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #34495e;
-}
-
-.form-group input[type="text"],
-.form-group input[type="date"] {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    box-sizing: border-box;
-}
-
-.form-group input[type="text"]:focus,
-.form-group input[type="date"]:focus {
-    border-color: #3498db;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.question-group {
-    background-color: white;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.add-btn,
-.remove-btn,
-.submit-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
+.back-button {
+    background: #fff;
+    border: 2px solid #3498db;
+    color: #3498db;
+    padding: 10px 20px;
+    margin-bottom: 30px;
     cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s;
-}
-
-.add-btn {
-    background-color: #2ecc71;
-    color: white;
-    margin-right: 10px;
-}
-
-.add-btn:hover {
-    background-color: #27ae60;
-}
-
-.remove-btn {
-    background-color: #e74c3c;
-    color: white;
-    margin-top: 10px;
-}
-
-.remove-btn:hover {
-    background-color: #c0392b;
-}
-
-.submit-btn {
-    display: block;
-    width: 100%;
-    margin-top: 20px;
-    background-color: #3498db;
-    color: white;
-    padding: 10px;
     font-size: 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
-.submit-btn:hover {
-    background-color: #2980b9;
+.back-button:hover {
+    background: #3498db;
+    color: #fff;
+}
+
+.exam-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.exam-header h2 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 28px;
+}
+
+.exam-date {
+    color: #7f8c8d;
+    font-size: 16px;
+    margin: 0;
+}
+
+.student-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.student-info h3 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.student-info p {
+    margin: 8px 0;
+    color: #555;
+}
+
+.exam-summary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    margin-bottom: 30px;
+    border-radius: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.summary-item {
+    flex: 1;
+    min-width: 150px;
+}
+
+.summary-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.summary-value {
+    display: block;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
 }
 
 /* Адаптивность */
 @media (max-width: 768px) {
-    .exam-form-container {
+    .exams-admin-container {
         padding: 15px;
     }
     
-    .form-group input[type="text"],
-    .form-group input[type="date"] {
-        font-size: 14px;
+    .exams-header h1 {
+        font-size: 24px;
+    }
+    
+    .exams-table-container {
+        overflow-x: auto;
+    }
+    
+    .exams-table {
+        min-width: 800px;
+    }
+    
+    .exams-controls {
+        width: 100%;
+    }
+    
+    .filter-select,
+    .sort-select {
+        flex: 1;
+        min-width: auto;
     }
 }
