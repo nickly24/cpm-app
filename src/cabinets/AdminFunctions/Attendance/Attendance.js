@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../../../api";
 import { API_BASE_URL } from "../../../Config";
 const monthNames = [
   "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",

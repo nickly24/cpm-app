@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../../../api';
 import { API_BASE_URL } from '../../../Config';
 import '../AdminFunctions.css';
 

@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import { API_BASE_URL } from '../../Config';
 import './CreateZap.css';
+import { useAuth } from '../../AuthContext';
 
 
 export default function CreateZap({ onBack }) {
+    const { user } = useAuth();
     const [text, setText] = useState('');
     const [images, setImages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
-    const studentId = localStorage.getItem('id');
+    const studentId = user?.id;
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);

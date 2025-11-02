@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import './ExamsList.css';
 import { API_EXAM_URL } from '../../Config';
+import { useAuth } from '../../AuthContext';
 
 const Exams = () => {
+  const { user } = useAuth();
   const [examSessions, setExamSessions] = useState([]);
   const [filteredSessions, setFilteredSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ const Exams = () => {
   const [sortBy, setSortBy] = useState('date'); // date, grade, points
   const [filterGrade, setFilterGrade] = useState('all'); // all, 5, 4, 3, 2
 
-  const studentId = localStorage.getItem('id');
+  const studentId = user?.id;
 
   useEffect(() => {
     const fetchExamSessions = async () => {

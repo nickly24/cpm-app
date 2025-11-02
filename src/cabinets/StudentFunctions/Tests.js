@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import './Tests.css';
 import { API_EXAM_URL } from '../../Config';
+import { useAuth } from '../../AuthContext';
+import axios from '../../api';
 
 export default function Tests({ onBack }) {
+  const { user } = useAuth();
   const [directions, setDirections] = useState([]);
   const [selectedDirection, setSelectedDirection] = useState(null);
   const [tests, setTests] = useState([]);
@@ -65,10 +68,8 @@ export default function Tests({ onBack }) {
   const loadDirections = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_EXAM_URL}/directions`);
-      if (!response.ok) throw new Error('Ошибка загрузки направлений');
-      const data = await response.json();
-      setDirections(data);
+      const response = await axios.get(`${API_EXAM_URL}/directions`);
+      setDirections(response.data);
     } catch (err) {
       setError('Не удалось загрузить направления: ' + err.message);
     } finally {
@@ -77,7 +78,7 @@ export default function Tests({ onBack }) {
   };
 
   const getStudentId = () => {
-    return localStorage.getItem('id');
+    return user?.id;
   };
 
   const loadCompletedTests = async () => {
@@ -85,20 +86,17 @@ export default function Tests({ onBack }) {
     if (!studentId) return;
 
     try {
-      const response = await fetch(`${API_EXAM_URL}/test-sessions/student/${studentId}`);
-      if (response.ok) {
-        const data = await response.json();
+      const response = await axios.get(`${API_EXAM_URL}/test-sessions/student/${studentId}`);
+      const data = response.data;
         console.log('Loaded completed tests:', data);
         setCompletedTests(data);
         
         // Загружаем детальную статистику для каждого теста
         const statsPromises = data.map(async (test) => {
           try {
-            const statsResponse = await fetch(`${API_EXAM_URL}/test-session/${test.id}/stats`);
-            if (statsResponse.ok) {
-              const stats = await statsResponse.json();
+          const statsResponse = await axios.get(`${API_EXAM_URL}/test-session/${test.id}/stats`);
+          const stats = statsResponse.data;
               return { testId: test.testId, stats };
-            }
           } catch (err) {
             console.error('Ошибка загрузки статистики для теста', test.testId, err);
           }
@@ -113,7 +111,6 @@ export default function Tests({ onBack }) {
           }
         });
         setTestStats(statsMap);
-      }
     } catch (err) {
       console.error('Ошибка загрузки сданных тестов:', err);
     }
@@ -123,10 +120,8 @@ export default function Tests({ onBack }) {
     try {
       setLoading(true);
       const directionName = typeof direction === 'string' ? direction : direction.name;
-      const response = await fetch(`${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}`);
-      if (!response.ok) throw new Error('Ошибка загрузки тестов');
-      const data = await response.json();
-      setTests(data);
+      const response = await axios.get(`${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}`);
+      setTests(response.data);
       
       // Загружаем сданные тесты для этого направления
       await loadCompletedTests();
@@ -148,10 +143,8 @@ export default function Tests({ onBack }) {
         return;
       }
       
-      const response = await fetch(`${API_EXAM_URL}/test/${session.testId}`);
-      if (!response.ok) throw new Error('Тест не найден');
-      const testData = await response.json();
-      setCurrentTest(testData);
+      const response = await axios.get(`${API_EXAM_URL}/test/${session.testId}`);
+      setCurrentTest(response.data);
       setTestSession(session);
     } catch (err) {
       setError('Не удалось восстановить тест: ' + err.message);
@@ -166,18 +159,14 @@ export default function Tests({ onBack }) {
       setLoading(true);
       
       // Загружаем тест
-      const testResponse = await fetch(`${API_EXAM_URL}/test/${testId}`);
-      if (!testResponse.ok) throw new Error('Тест не найден');
-      const testData = await testResponse.json();
+      const testResponse = await axios.get(`${API_EXAM_URL}/test/${testId}`);
       
       // Загружаем статистику с ответами
-      const statsResponse = await fetch(`${API_EXAM_URL}/test-session/${sessionId}/stats`);
-      if (!statsResponse.ok) throw new Error('Статистика не найдена');
-      const statsData = await statsResponse.json();
+      const statsResponse = await axios.get(`${API_EXAM_URL}/test-session/${sessionId}/stats`);
       
       setTestReview({
-        test: testData,
-        stats: statsData
+        test: testResponse.data,
+        stats: statsResponse.data
       });
     } catch (err) {
       setError('Не удалось загрузить разбор теста: ' + err.message);
@@ -196,9 +185,8 @@ export default function Tests({ onBack }) {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_EXAM_URL}/test/${testId}`);
-      if (!response.ok) throw new Error('Тест не найден');
-      const testData = await response.json();
+      const response = await axios.get(`${API_EXAM_URL}/test/${testId}`);
+      const testData = response.data;
       
       // Перемешиваем вопросы в случайном порядке (Fisher-Yates алгоритм)
       const shuffledQuestions = [...testData.questions];
@@ -1063,24 +1051,16 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
     // Отправляем результаты на сервер только если не режим тренировки
     if (!isPracticeMode) {
       try {
-        const response = await fetch(`${API_EXAM_URL}/create-test-session`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        body: JSON.stringify({
+        const response = await axios.post(`${API_EXAM_URL}/create-test-session`, {
           studentId: getStudentId(),
           testId: test._id,
           testTitle: test.title,
           answers: calculatedAnswers,
           timeSpentMinutes: timeSpentMinutes,
           score: ratingScore
-        })
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Тест автоматически завершен, ID сессии:', result.id);
+        console.log('Тест автоматически завершен, ID сессии:', response.data.id);
           setIsCompleted(true);
           
           // Обновляем сессию в localStorage как завершенную
@@ -1088,28 +1068,21 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           localStorage.setItem('testSession', JSON.stringify(updatedSession));
           
           onComplete(results);
-        } else if (response.status === 409) {
-          // Обработка ошибки дублирования (тест уже сдан)
-          const errorData = await response.json();
-          console.warn('Тест уже сдан:', errorData);
-          setSubmitError(`Тест уже был сдан ранее. Результат: ${errorData.existingScore || 'неизвестно'} баллов`);
-          setIsCompleted(true);
-          
-          // Обновляем сессию в localStorage как завершенную
-          const updatedSession = { ...session, isCompleted: true };
-          localStorage.setItem('testSession', JSON.stringify(updatedSession));
-          
-          onComplete(results);
-        } else {
-          const errorText = await response.text();
-          throw new Error(`Ошибка сервера (${response.status}): ${errorText}`);
-        }
       } catch (error) {
         console.error('Ошибка отправки результатов:', error);
         
         // Различаем типы ошибок
-        if (error.message.includes('409')) {
-          setSubmitError('Тест уже был сдан ранее. Повторная отправка невозможна.');
+        if (error.response?.status === 409) {
+          // Обработка ошибки дублирования (тест уже сдан)
+          console.warn('Тест уже сдан:', error.response.data);
+          setSubmitError(`Тест уже был сдан ранее. Результат: ${error.response.data.existingScore || 'неизвестно'} баллов`);
+          setIsCompleted(true);
+          
+          // Обновляем сессию в localStorage как завершенную
+          const updatedSession = { ...session, isCompleted: true };
+          localStorage.setItem('testSession', JSON.stringify(updatedSession));
+          
+          onComplete(results);
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           setSubmitError('Ошибка сети. Проверьте подключение к интернету и попробуйте еще раз.');
         } else {
@@ -1228,24 +1201,16 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
     // Отправляем результаты на сервер только если не режим тренировки
     if (!isPracticeMode) {
       try {
-        const response = await fetch(`${API_EXAM_URL}/create-test-session`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        body: JSON.stringify({
+        const response = await axios.post(`${API_EXAM_URL}/create-test-session`, {
           studentId: getStudentId(),
           testId: test._id,
           testTitle: test.title,
           answers: calculatedAnswers,
           timeSpentMinutes: timeSpentMinutes,
           score: ratingScore // Отправляем рейтинговый балл вместо обычного score
-        })
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Тест завершен, ID сессии:', result.id);
+        console.log('Тест завершен, ID сессии:', response.data.id);
           setIsCompleted(true);
           
           // Обновляем сессию в localStorage как завершенную
@@ -1253,11 +1218,14 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           localStorage.setItem('testSession', JSON.stringify(updatedSession));
           
           onComplete(results);
-        } else if (response.status === 409) {
+      } catch (error) {
+        console.error('Ошибка отправки результатов:', error);
+        
+        // Различаем типы ошибок
+        if (error.response?.status === 409) {
           // Обработка ошибки дублирования (тест уже сдан)
-          const errorData = await response.json();
-          console.warn('Тест уже сдан:', errorData);
-          setSubmitError(`Тест уже был сдан ранее. Результат: ${errorData.existingScore || 'неизвестно'} баллов`);
+          console.warn('Тест уже сдан:', error.response.data);
+          setSubmitError(`Тест уже был сдан ранее. Результат: ${error.response.data.existingScore || 'неизвестно'} баллов`);
           setIsCompleted(true); // Помечаем как завершенный, чтобы показать результаты
           
           // Обновляем сессию в localStorage как завершенную
@@ -1265,16 +1233,6 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           localStorage.setItem('testSession', JSON.stringify(updatedSession));
           
           onComplete(results); // Показываем результаты локально
-        } else {
-          const errorText = await response.text();
-          throw new Error(`Ошибка сервера (${response.status}): ${errorText}`);
-        }
-      } catch (error) {
-        console.error('Ошибка отправки результатов:', error);
-        
-        // Различаем типы ошибок
-        if (error.message.includes('409')) {
-          setSubmitError('Тест уже был сдан ранее. Повторная отправка невозможна.');
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           setSubmitError('Ошибка сети. Проверьте подключение к интернету и попробуйте еще раз.');
         } else {

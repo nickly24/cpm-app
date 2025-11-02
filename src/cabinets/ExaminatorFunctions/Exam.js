@@ -1,7 +1,7 @@
 
 import './Exam.css'
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import './Examiner.module.css';
 import { API_BASE_URL } from '../../Config';
 import { API_EXAM_URL } from '../../Config';

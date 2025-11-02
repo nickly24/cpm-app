@@ -12,6 +12,7 @@ import Schedule from './AdminFunctions/Schedule/Schedule';
 import Zaps from './AdminFunctions/Zaps';
 import { ReactComponent as Logo } from './logo.svg';
 import './AdminCabinet.css';
+import { useAuth } from '../AuthContext';
 
 const AdminCabinet = () => {
   const hash = window.location.hash.substring(1);
@@ -34,8 +35,9 @@ const AdminCabinet = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  const adminName = localStorage.getItem('full_name') || 'Администратор';
-  const adminId = localStorage.getItem('id');
+  const { user, logout } = useAuth();
+  const adminName = user?.full_name || 'Администратор';
+  const adminId = user?.id;
   
   useEffect(() => {
     if (currentView === 'dashboard') {
@@ -45,9 +47,8 @@ const AdminCabinet = () => {
     }
   }, [currentView]);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.reload();
+  const handleLogout = async () => {
+    await logout();
   };
 
   const menuItems = [

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import QRCode from 'qrcode';
 import './Progress.css'; // Создадим отдельный файл для стилей
 import { API_EXAM_URL } from '../../Config';
+import { useAuth } from '../../AuthContext';
+
 const Progress = ({ onBack }) => {
-  const studentName = localStorage.getItem('full_name');
-  const studentId = localStorage.getItem('id');
+  const { user } = useAuth();
+  const studentName = user?.full_name;
+  const studentId = user?.id;
   const [ratings, setRatings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

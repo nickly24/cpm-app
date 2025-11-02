@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import './StudentsPanel.css';
 import StudentInfo from './StudentInfo';
 import { API_EXAM_URL } from '../../Config';

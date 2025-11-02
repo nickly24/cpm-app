@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import styles from './Login.module.css';
-import { API_BASE_URL } from './Config';
+import { useAuth } from './AuthContext';
+
 function Login() {
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,25 +14,14 @@ function Login() {
     setIsLoading(true);
     setError('');
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth`, {
-        login: username,
-        password: password,
-      });
+    const result = await login(username, password);
 
-      const { role, id, full_name, group_id } = response.data.res;
-
-      localStorage.setItem('role', role);
-      localStorage.setItem('id', id);
-      localStorage.setItem('full_name', full_name);
-      localStorage.setItem('group_id', group_id);
-
-      window.location.reload();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка входа');
-    } finally {
-      setIsLoading(false);
+    if (!result.success) {
+      setError(result.message || 'Ошибка входа');
     }
+    // При успехе перезагрузка не нужна, App.js автоматически покажет нужный кабинет
+    
+      setIsLoading(false);
   };
 
   return (

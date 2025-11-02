@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import { API_BASE_URL } from '../../Config';
 import './MyZaps.css';
+import { useAuth } from '../../AuthContext';
 
 
 export default function MyZaps({ onBack, onCreateNew }) {
+    const { user } = useAuth();
     const [zaps, setZaps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const studentId = localStorage.getItem('id');
+    const studentId = user?.id;
 
     useEffect(() => {
-        fetchZaps();
-    }, []);
+        if (studentId) {
+            fetchZaps();
+        }
+    }, [studentId]);
 
     const fetchZaps = async () => {
         try {

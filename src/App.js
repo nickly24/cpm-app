@@ -1,28 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import Login from './Login';
 import StudentCabinet from './cabinets/StudentCabinet';
 import ProctorCabinet from './cabinets/ProctorCabinet';
 import AdminCabinet from './cabinets/AdminCabinet';
 import ExaminatorCabinet from './cabinets/ExaminatorCabinet';
 import SupervisorCabinet from './cabinets/SupervisorCabinet';
-import './App.css'
+import './App.css';
+
 function App() {
-  const [role, setRole] = useState(localStorage.getItem('role') || '');
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setRole(localStorage.getItem('role') || '');
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        Загрузка...
+      </div>
+    );
+  }
 
-  if (!role) {
+  if (!user) {
     return <Login />;
   }
 
   const renderCabinet = () => {
-    switch (role) {
+    switch (user.role) {
       case 'student':
         return <StudentCabinet />;
       case 'proctor':
@@ -34,7 +41,7 @@ function App() {
       case 'supervisor':
         return <SupervisorCabinet />;
       default:
-        return <div>Неизвестная роль: {role}</div>;
+        return <div>Неизвестная роль: {user.role}</div>;
     }
   };
 

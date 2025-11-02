@@ -1,13 +1,13 @@
 import { ReactComponent as Logo } from '../logo.svg';
 import StudentsPanel from './StudentsPanel';
 import './Supervisor.css';
+import { useAuth } from '../../AuthContext';
+
 export default function Header(){
-    const handleLogout = () => {
-        localStorage.removeItem('role');
-        localStorage.removeItem('id');
-        localStorage.removeItem('full_name');
-        localStorage.removeItem('group_id');
-        window.location.reload();
+    const { logout } = useAuth();
+    
+    const handleLogout = async () => {
+        await logout();
     };
     return(
         <>

@@ -1,6 +1,6 @@
 // Training.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import './Quiz.css';
 import { API_BASE_URL } from '../../Config';
 const Quiz = ({ onBack }) => {

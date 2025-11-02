@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import { API_BASE_URL } from '../../Config';
 import './StudentHomeworkList.modern.css';
+import { useAuth } from '../../AuthContext';
+
 const StudentHomeworkList = () => {
+  const { user } = useAuth();
   const [homeworks, setHomeworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const studentId = localStorage.getItem('id');
+  const studentId = user?.id;
   const homeworksPerPage = 6;
   const [statusFilter, setStatusFilter] = useState('all'); // all | done | undone
   const [typeFilter, setTypeFilter] = useState('all'); // all | ДЗНВ | ОВ

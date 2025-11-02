@@ -3,18 +3,16 @@ import StudentList from './ProctorsFunctions/StudentList';
 import HomeworkList from './ProctorsFunctions/HomeworkList';
 import './ProctorCabinet.css';
 import { ReactComponent as Logo } from './logo.svg';
+import { useAuth } from '../AuthContext';
 
 const ProctorCabinet = () => {
-  const fullName = localStorage.getItem('full_name') || 'Проктор';
-  const groupId = localStorage.getItem('group_id');
+  const { user, logout } = useAuth();
+  const fullName = user?.full_name || 'Проктор';
+  const groupId = user?.group_id;
   const [showStudents, setShowStudents] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('role');
-    localStorage.removeItem('id');
-    localStorage.removeItem('full_name');
-    localStorage.removeItem('group_id');
-    window.location.reload();
+  const handleLogout = async () => {
+    await logout();
   };
 
   const toggleStudents = () => {

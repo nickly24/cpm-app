@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../../api';
 import './ExamsInfo.css';
 import { API_EXAM_URL } from '../../../Config';
 const ExamsInfo = ({ studentId }) => {

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../api';
 import './StudentAttendance.css';
 import { API_EXAM_URL } from '../../Config';
+import { useAuth } from '../../AuthContext';
+
 export default function StudentAttendance() {
+    const { user } = useAuth();
     const [year, setYear] = useState(new Date().getFullYear());
     const [month, setMonth] = useState(new Date().getMonth() + 1);
     const [attendanceData, setAttendanceData] = useState([]);
@@ -10,17 +13,19 @@ export default function StudentAttendance() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchAttendance();
-    }, [year, month]);
+        if (user?.id) {
+            fetchAttendance();
+        }
+    }, [year, month, user]);
 
     const fetchAttendance = async () => {
         try {
             setLoading(true);
             setError(null);
             
-            const studentId = localStorage.getItem('id');
+            const studentId = user?.id;
             if (!studentId) {
-                throw new Error('ID студента не найден в localStorage');
+                throw new Error('ID студента не найден');
             }
 
             const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;

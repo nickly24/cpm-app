@@ -3,10 +3,12 @@ import ThemeList from './ThemeList';
 import ThemeDetail from './ThemeDetail';
 import FlashcardMode from './FlashcardMode';
 import './Training.css';
-import axios from 'axios';
+import axios from '../../api';
 import { API_BASE_URL } from '../../Config';
+import { useAuth } from '../../AuthContext';
 
 export default function Training() {
+  const { user } = useAuth();
   const [themes, setThemes] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(null);
   const [viewMode, setViewMode] = useState('themes');
@@ -15,16 +17,16 @@ export default function Training() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const id = localStorage.getItem('id');
+    const id = user?.id;
     if (!id) {
-      setError('Student ID not found in localStorage');
+      setError('Student ID not found');
       setLoading(false);
       return;
     }
     
     setStudentId(id);
     fetchThemes(id);
-  }, []);
+  }, [user]);
 
   const fetchThemes = async (studentId) => {
     try {

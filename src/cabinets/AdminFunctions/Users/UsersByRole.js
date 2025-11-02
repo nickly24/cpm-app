@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../../../api";
 import UserCard from "./UserCard";
 import { API_BASE_URL } from "../../../Config";
 import '../AdminFunctions.css';

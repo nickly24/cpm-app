@@ -10,10 +10,13 @@ import Progress from './StudentFunctions/Progress';
 import Training from './StudentFunctions/Training';
 import StudentSchedule from './StudentFunctions/StudentSchedule';
 import ZapsContainer from './StudentFunctions/ZapsContainer';
+import { useAuth } from '../AuthContext';
+
 const StudentCabinet = () => {
-  const studentName = localStorage.getItem('full_name') || 'Студент';
-  const groupId = localStorage.getItem('group_id') || 'не указана';
-  const studentId = localStorage.getItem('id');
+  const { user, logout } = useAuth();
+  const studentName = user?.full_name || 'Студент';
+  const groupId = user?.group_id || 'не указана';
+  const studentId = user?.id;
   
   const [activeComponent, setActiveComponent] = useState('performance');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -57,12 +60,8 @@ const StudentCabinet = () => {
     };
   }, [isMenuOpen]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('role');
-    localStorage.removeItem('id');
-    localStorage.removeItem('full_name');
-    localStorage.removeItem('group_id');
-    window.location.reload();
+  const handleLogout = async () => {
+    await logout();
   };
 
   const renderComponent = () => {
