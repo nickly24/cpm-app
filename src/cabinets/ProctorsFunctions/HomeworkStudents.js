@@ -1,6 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../../api';
 import { API_BASE_URL } from '../../Config';
+import { useAuth } from '../../AuthContext';
+
+// Функция для конвертации даты в формат YYYY-MM-DD для input type="date"
+const formatDateForInput = (dateValue) => {
+  if (!dateValue) return '';
+  
+  // Если уже в формате YYYY-MM-DD
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+  
+  // Если дата в формате YYYY-MM-DD с временем (2025-10-30T00:00:00)
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+    return dateValue.split('T')[0];
+  }
+  
+  // Пытаемся распарсить дату, избегая проблем с временными зонами
+  try {
+    let date;
+    
+    // Если строка в формате YYYY-MM-DD, парсим без временной зоны
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+      const parts = dateValue.split(/[-T\s]/);
+      if (parts.length >= 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // месяц в JS начинается с 0
+        const day = parseInt(parts[2], 10);
+        date = new Date(year, month, day);
+      } else {
+        date = new Date(dateValue);
+      }
+    } else {
+      date = new Date(dateValue);
+    }
+    
+    if (isNaN(date.getTime())) return '';
+    
+    // Форматируем в YYYY-MM-DD используя UTC чтобы избежать сдвигов
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    console.error('Error formatting date:', e, dateValue);
+    return '';
+  }
+};
+
 const HomeworkStudents = ({ homeworkId }) => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +58,8 @@ const HomeworkStudents = ({ homeworkId }) => {
   const [datePass, setDatePass] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);
-  const proctorId = localStorage.getItem('id');
+  const { user } = useAuth();
+  const proctorId = user?.id;
 
   useEffect(() => {
     if (!homeworkId || !proctorId) return;
@@ -191,7 +240,7 @@ const HomeworkStudents = ({ homeworkId }) => {
                 <button 
                   onClick={() => {
                     setEditingSubmittedSession(session);
-                    setDatePass(session.date_pass || '');
+                    setDatePass(formatDateForInput(session.date_pass));
                   }}
                   className="edit-btn"
                 >
