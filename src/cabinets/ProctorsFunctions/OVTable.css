@@ -25,6 +25,83 @@
   font-size: 14px;
 }
 
+/* Панель фильтров */
+.ov-table-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group.filter-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select,
+.filter-input {
+  padding: 10px 12px;
+  border: 2px solid #e8ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 150px;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-clear-btn {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.filter-clear-btn:hover {
+  background: #c82333;
+}
+
+.ov-table-empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
 .ov-table-loading,
 .ov-table-empty {
   display: flex;
@@ -156,6 +233,27 @@
   flex-direction: column;
   gap: 4px;
   min-width: 100px;
+}
+
+.homework-type-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+
+.homework-type-badge[data-type="ОВ"] {
+  background: #ffeaa7;
+  color: #d63031;
+}
+
+.homework-type-badge[data-type="ДЗНВ"] {
+  background: #a8e6cf;
+  color: #00b894;
 }
 
 .homework-name {
@@ -330,6 +428,29 @@
 
   .ov-table-header h1 {
     font-size: 20px;
+  }
+
+  .ov-table-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group.filter-search {
+    min-width: 100%;
+  }
+
+  .filter-select,
+  .filter-input {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .filter-clear-btn {
+    width: 100%;
   }
 
   .student-col {
