@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from '../../../api';
 import { API_BASE_URL } from '../../../Config';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../../AuthContext';
 import './Ratings.css';
 import RatingCalculatorModal from './RatingCalculatorModal';
 import RatingDetails from './RatingDetails';
 import SuccessModal from './SuccessModal';
 
 const Ratings = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
@@ -93,27 +96,35 @@ const Ratings = () => {
           <h1>Рейтинги студентов</h1>
           <p className="ratings-subtitle">Текущие рейтинги всех студентов</p>
         </div>
-        <button 
-          className="calculate-ratings-btn"
-          onClick={handleCalculateRatings}
-        >
-          <span className="btn-icon">🧮</span>
-          <span>Калькулятор рейтинга</span>
-        </button>
+        {isAdmin && (
+          <button 
+            className="calculate-ratings-btn"
+            onClick={handleCalculateRatings}
+          >
+            <span className="btn-icon">🧮</span>
+            <span>Калькулятор рейтинга</span>
+          </button>
+        )}
       </div>
 
       {ratings.length === 0 ? (
         <div className="ratings-empty">
           <div className="empty-icon">📊</div>
           <h2>Рейтинги еще не рассчитаны</h2>
-          <p>Нажмите кнопку "Калькулятор рейтинга" чтобы рассчитать рейтинги для всех студентов</p>
-          <button 
-            className="calculate-ratings-btn empty-btn"
-            onClick={handleCalculateRatings}
-          >
-            <span className="btn-icon">🧮</span>
-            <span>Рассчитать рейтинги</span>
-          </button>
+          {isAdmin ? (
+            <>
+              <p>Нажмите кнопку "Калькулятор рейтинга" чтобы рассчитать рейтинги для всех студентов</p>
+              <button 
+                className="calculate-ratings-btn empty-btn"
+                onClick={handleCalculateRatings}
+              >
+                <span className="btn-icon">🧮</span>
+                <span>Рассчитать рейтинги</span>
+              </button>
+            </>
+          ) : (
+            <p>Рейтинги будут доступны после расчета администратором</p>
+          )}
         </div>
       ) : (
         <div className="ratings-table-wrapper">
