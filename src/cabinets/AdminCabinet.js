@@ -10,6 +10,7 @@ import Exams from './AdminFunctions/Exams/Exams';
 import StudentAdd from './AdminFunctions/Users/StudentAdd';
 import Schedule from './AdminFunctions/Schedule/Schedule';
 import Zaps from './AdminFunctions/Zaps';
+import Ratings from './AdminFunctions/Ratings/Ratings';
 import { ReactComponent as Logo } from './logo.svg';
 import './AdminCabinet.css';
 import { useAuth } from '../AuthContext';
@@ -64,6 +65,7 @@ const AdminCabinet = () => {
     { id: 'attendance', label: 'Посещаемость', icon: '📅', description: 'Учет посещаемости' },
     { id: 'scan', label: 'Сканирование', icon: '📷', description: 'Скан посещаемости' },
     { id: 'zaps', label: 'Запросы на отгул', icon: '📋', description: 'Обработка отгулов' },
+    { id: 'ratings', label: 'Рейтинг', icon: '🏆', description: 'Рейтинги студентов' },
   ];
 
   const handleMenuClick = (viewId) => {
@@ -95,6 +97,8 @@ const AdminCabinet = () => {
         return <Exams />;
       case 'zaps':
         return <Zaps />;
+      case 'ratings':
+        return <Ratings />;
       case 'dashboard':
       default:
         return (

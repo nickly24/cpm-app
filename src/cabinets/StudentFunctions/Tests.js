@@ -155,11 +155,24 @@ export default function Tests({ onBack }) {
   };
 
   const loadTestReview = async (testId, sessionId) => {
+    // Проверяем, не является ли это внешним тестом
+    const test = tests.find(t => t.id === testId || t._id === testId);
+    if (test && (test.isExternal || test.externalTest)) {
+      setError('Просмотр ответов недоступен для тестов, проведенных вне платформы CPM-LMS.');
+      return;
+    }
+    
     try {
       setLoading(true);
       
       // Загружаем тест
       const testResponse = await axios.get(`${API_EXAM_URL}/test/${testId}`);
+      
+      // Дополнительная проверка - если тест не найден, это может быть внешний тест
+      if (!testResponse.data || !testResponse.data.questions) {
+        setError('Просмотр ответов недоступен для этого теста.');
+        return;
+      }
       
       // Загружаем статистику с ответами
       const statsResponse = await axios.get(`${API_EXAM_URL}/test-session/${sessionId}/stats`);
@@ -176,6 +189,13 @@ export default function Tests({ onBack }) {
   };
 
   const startTest = async (testId, practiceMode = false) => {
+    // Проверяем, не является ли это внешним тестом
+    const test = tests.find(t => t.id === testId || t._id === testId);
+    if (test && (test.isExternal || test.externalTest)) {
+      setError('Этот тест проводился вне платформы CPM-LMS и недоступен для прохождения.');
+      return;
+    }
+    
     // Проверяем, не сдан ли уже этот тест (только если не режим тренировки)
     const isAlreadyCompleted = completedTests.some(completed => completed.testId === testId);
     if (isAlreadyCompleted && !practiceMode) {
@@ -187,6 +207,12 @@ export default function Tests({ onBack }) {
       setLoading(true);
       const response = await axios.get(`${API_EXAM_URL}/test/${testId}`);
       const testData = response.data;
+      
+      // Дополнительная проверка - если тест не найден в MongoDB, это может быть внешний тест
+      if (!testData || !testData.questions) {
+        setError('Этот тест недоступен для прохождения.');
+        return;
+      }
       
       // Перемешиваем вопросы в случайном порядке (Fisher-Yates алгоритм)
       const shuffledQuestions = [...testData.questions];
@@ -437,8 +463,15 @@ function TestsList({
     const upcoming = [];
     const completed = [];
     const missed = [];
+    const external = []; // Внешние тесты
     
     tests.forEach(test => {
+      // Проверяем, является ли тест внешним
+      if (test.isExternal || test.externalTest) {
+        external.push(test);
+        return; // Внешние тесты не обрабатываются дальше
+      }
+      
       const startDate = new Date(test.startDate);
       const endDate = new Date(test.endDate);
       const isCompleted = completedTests.some(completed => completed.testId === test.id);
@@ -455,15 +488,16 @@ function TestsList({
       }
     });
     
-    return { available, upcoming, completed, missed };
+    return { available, upcoming, completed, missed, external };
   };
 
   // Фильтрация тестов
   const filterTests = (tests, searchTerm) => {
     if (!searchTerm) return tests;
-    return tests.filter(test => 
-      test.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return tests.filter(test => {
+      const testName = (test.title || test.name || '').toLowerCase();
+      return testName.includes(searchTerm.toLowerCase());
+    });
   };
 
   // Фильтрация по датам
@@ -471,6 +505,27 @@ function TestsList({
     if (!dateFilter.startDate && !dateFilter.endDate) return tests;
     
     return tests.filter(test => {
+      // Внешние тесты фильтруем по дате теста
+      if (test.isExternal || test.externalTest) {
+        if (!test.date) return false;
+        const testDate = new Date(test.date);
+        let matchesStart = true;
+        let matchesEnd = true;
+        
+        if (dateFilter.startDate) {
+          const filterStartDate = new Date(dateFilter.startDate);
+          matchesStart = testDate >= filterStartDate;
+        }
+        
+        if (dateFilter.endDate) {
+          const filterEndDate = new Date(dateFilter.endDate);
+          matchesEnd = testDate <= filterEndDate;
+        }
+        
+        return matchesStart && matchesEnd;
+      }
+      
+      // Обычные тесты фильтруем по периодам
       const testStartDate = new Date(test.startDate);
       const testEndDate = new Date(test.endDate);
       
@@ -527,6 +582,10 @@ function TestsList({
     filterTests(groupedTests.missed, searchTerm), 
     dateFilter
   );
+  const filteredExternal = filterTestsByDate(
+    filterTests(groupedTests.external, searchTerm), 
+    dateFilter
+  );
 
   // Определяем какие тесты показывать в зависимости от фильтра
   let testsToShow = [];
@@ -534,12 +593,58 @@ function TestsList({
   else if (filter === 'upcoming') testsToShow = filteredUpcoming;
   else if (filter === 'completed') testsToShow = filteredCompleted;
   else if (filter === 'missed') testsToShow = filteredMissed;
-  else testsToShow = [...filteredAvailable, ...filteredUpcoming, ...filteredCompleted, ...filteredMissed];
+  else testsToShow = [...filteredAvailable, ...filteredUpcoming, ...filteredCompleted, ...filteredMissed, ...filteredExternal];
 
   const paginatedTests = paginateTests(testsToShow, currentPage);
   const totalPages = Math.ceil(testsToShow.length / 4);
 
   const TestCard = ({ test, type }) => {
+    // Проверяем, является ли тест внешним
+    const isExternal = test.isExternal || test.externalTest;
+    
+    // Для внешних тестов используем другую логику
+    if (isExternal) {
+      const hasResult = test.hasResult && test.rate !== null && test.rate !== undefined;
+      
+      return (
+        <div key={test.id} className={`tests_test_card external ${hasResult ? 'completed' : ''}`}>
+          <div className="tests_test_card_header">
+            <h3 className="tests_test_title">{test.name || test.title}</h3>
+            <div className="tests_test_type_badge external">
+              Вне системы CPM-LMS
+            </div>
+          </div>
+          
+          <div className="tests_test_info">
+            <p className="tests_external_notice">
+              <strong>⚠️ Тест проводился вне платформы CPM-LMS</strong>
+            </p>
+            {test.date && (
+              <p><strong>Дата проведения:</strong> {new Date(test.date).toLocaleDateString('ru-RU')}</p>
+            )}
+            
+            {hasResult ? (
+              <div className="tests_test_completed_info">
+                <p><strong>Результат:</strong> {test.rate} баллов</p>
+              </div>
+            ) : (
+              <p className="tests_test_status">Результат отсутствует</p>
+            )}
+          </div>
+          
+          <div className="tests_test_actions">
+            <button className="tests_start_btn disabled" disabled>
+              Недоступен для прохождения
+            </button>
+            {!hasResult && (
+              <p className="tests_external_no_result">Результат не добавлен в систему</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    // Логика для обычных тестов
     const completed = isTestCompleted(test);
     const testResult = getTestResult(test);
     const now = new Date();
@@ -725,6 +830,11 @@ function TestsList({
           <p className="tests_no_tests">Тесты не найдены</p>
         ) : (
           paginatedTests.map(test => {
+            // Для внешних тестов не определяем тип
+            if (test.isExternal || test.externalTest) {
+              return <TestCard key={test.id} test={test} type="external" />;
+            }
+            
             const completed = isTestCompleted(test);
             const now = new Date();
             const startDate = new Date(test.startDate);

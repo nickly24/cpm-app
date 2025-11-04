@@ -62,6 +62,13 @@ const TestsManagement = () => {
   };
 
   const handleViewTest = async (testId) => {
+    // Проверяем, не является ли это внешним тестом
+    const test = tests.find(t => t.id === testId || t._id === testId);
+    if (test && (test.isExternal || test.externalTest)) {
+      alert('Просмотр недоступен для тестов, проведенных вне платформы CPM-LMS.');
+      return;
+    }
+    
     try {
       const response = await axios.get(`${API_EXAM_URL}/test/${testId}`);
       setEditingTest(response.data);
@@ -73,6 +80,13 @@ const TestsManagement = () => {
   };
 
   const handleEditTest = async (testId) => {
+    // Проверяем, не является ли это внешним тестом
+    const test = tests.find(t => t.id === testId || t._id === testId);
+    if (test && (test.isExternal || test.externalTest)) {
+      alert('Редактирование недоступно для тестов, проведенных вне платформы CPM-LMS.');
+      return;
+    }
+    
     try {
       const response = await axios.get(`${API_EXAM_URL}/test/${testId}`);
       setEditingTest(response.data);
@@ -84,6 +98,13 @@ const TestsManagement = () => {
   };
 
   const handleDeleteTest = async (testId) => {
+    // Проверяем, не является ли это внешним тестом
+    const test = tests.find(t => t.id === testId || t._id === testId);
+    if (test && (test.isExternal || test.externalTest)) {
+      alert('Удаление недоступно для тестов, проведенных вне платформы CPM-LMS.');
+      return;
+    }
+    
     if (window.confirm('Вы уверены, что хотите удалить этот тест? Это действие также удалит все связанные тест-сессии и не может быть отменено.')) {
       try {
         const response = await axios.delete(`${API_EXAM_URL}/test/${testId}`);
@@ -116,6 +137,11 @@ const TestsManagement = () => {
   };
 
   const getStatusBadge = (test) => {
+    // Для внешних тестов показываем специальный бейдж
+    if (test.isExternal || test.externalTest) {
+      return <span className="test_status_badge test_status_external">Вне системы CPM-LMS</span>;
+    }
+    
     const now = new Date();
     const startDate = new Date(test.startDate);
     const endDate = new Date(test.endDate);
@@ -133,6 +159,11 @@ const TestsManagement = () => {
 
   // Функции фильтрации
   const getTestStatus = (test) => {
+    // Внешние тесты не имеют статуса по датам
+    if (test.isExternal || test.externalTest) {
+      return 'external';
+    }
+    
     const now = new Date();
     const startDate = new Date(test.startDate);
     const endDate = new Date(test.endDate);
@@ -147,9 +178,10 @@ const TestsManagement = () => {
 
     // Фильтр по поиску
     if (searchTerm) {
-      filtered = filtered.filter(test => 
-        test.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(test => {
+        const testName = (test.name || test.title || '').toLowerCase();
+        return testName.includes(searchTerm.toLowerCase());
+      });
     }
 
     // Фильтр по статусу
@@ -160,6 +192,27 @@ const TestsManagement = () => {
     // Фильтр по датам
     if (dateFilter.startDate || dateFilter.endDate) {
       filtered = filtered.filter(test => {
+        // Для внешних тестов фильтруем по дате проведения
+        if (test.isExternal || test.externalTest) {
+          if (!test.date) return false;
+          const testDate = new Date(test.date);
+          let matchesStart = true;
+          let matchesEnd = true;
+          
+          if (dateFilter.startDate) {
+            const filterStartDate = new Date(dateFilter.startDate);
+            matchesStart = testDate >= filterStartDate;
+          }
+          
+          if (dateFilter.endDate) {
+            const filterEndDate = new Date(dateFilter.endDate);
+            matchesEnd = testDate <= filterEndDate;
+          }
+          
+          return matchesStart && matchesEnd;
+        }
+        
+        // Для обычных тестов фильтруем по периодам
         const testStartDate = new Date(test.startDate);
         const testEndDate = new Date(test.endDate);
         
@@ -340,9 +393,9 @@ const TestsManagement = () => {
           <>
             <div className="tests_management_list">
               {paginatedTests.map((test) => (
-            <div key={test.id} className="test_card">
+            <div key={test.id} className={`test_card ${(test.isExternal || test.externalTest) ? 'test_card_external' : ''}`}>
               <div className="test_card_header">
-                <h3 className="test_card_title">{test.title}</h3>
+                <h3 className="test_card_title">{test.name || test.title}</h3>
                 {getStatusBadge(test)}
               </div>
               
@@ -353,42 +406,78 @@ const TestsManagement = () => {
                     <span className="test_info_value">{selectedDirection}</span>
                   </div>
                   
-                  <div className="test_info_item">
-                    <span className="test_info_label">Время:</span>
-                    <span className="test_info_value">{test.timeLimitMinutes} мин</span>
-                  </div>
-                  
-                  <div className="test_info_item">
-                    <span className="test_info_label">Начало:</span>
-                    <span className="test_info_value">{formatDate(test.startDate)}</span>
-                  </div>
-                  
-                  <div className="test_info_item">
-                    <span className="test_info_label">Окончание:</span>
-                    <span className="test_info_value">{formatDate(test.endDate)}</span>
-                  </div>
+                  {/* Для внешних тестов показываем другую информацию */}
+                  {(test.isExternal || test.externalTest) ? (
+                    <>
+                      <div className="test_info_item">
+                        <span className="test_info_label">Дата проведения:</span>
+                        <span className="test_info_value">
+                          {test.date ? formatDate(test.date) : 'Не указана'}
+                        </span>
+                      </div>
+                      {test.hasResult && test.rate !== null && test.rate !== undefined && (
+                        <div className="test_info_item">
+                          <span className="test_info_label">Результат:</span>
+                          <span className="test_info_value">{test.rate} баллов</span>
+                        </div>
+                      )}
+                      <div className="test_info_item">
+                        <span className="test_info_label">Статус:</span>
+                        <span className="test_info_value">
+                          {test.hasResult ? 'Результат добавлен' : 'Результат отсутствует'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="test_info_item">
+                        <span className="test_info_label">Время:</span>
+                        <span className="test_info_value">{test.timeLimitMinutes} мин</span>
+                      </div>
+                      
+                      <div className="test_info_item">
+                        <span className="test_info_label">Начало:</span>
+                        <span className="test_info_value">{formatDate(test.startDate)}</span>
+                      </div>
+                      
+                      <div className="test_info_item">
+                        <span className="test_info_label">Окончание:</span>
+                        <span className="test_info_value">{formatDate(test.endDate)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               
               <div className="test_card_actions">
-                <button
-                  onClick={() => handleViewTest(test.id)}
-                  className="test_action_btn test_action_view"
-                >
-                  Просмотреть
-                </button>
-                <button
-                  onClick={() => handleEditTest(test.id)}
-                  className="test_action_btn test_action_edit"
-                >
-                  Редактировать
-                </button>
-                <button
-                  onClick={() => handleDeleteTest(test.id)}
-                  className="test_action_btn test_action_delete"
-                >
-                  Удалить
-                </button>
+                {/* Для внешних тестов не показываем кнопки редактирования и удаления */}
+                {(test.isExternal || test.externalTest) ? (
+                  <div className="test_external_notice">
+                    <p>⚠️ Тест проводился вне платформы CPM-LMS</p>
+                    <p>Редактирование и удаление недоступны</p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleViewTest(test.id)}
+                      className="test_action_btn test_action_view"
+                    >
+                      Просмотреть
+                    </button>
+                    <button
+                      onClick={() => handleEditTest(test.id)}
+                      className="test_action_btn test_action_edit"
+                    >
+                      Редактировать
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTest(test.id)}
+                      className="test_action_btn test_action_delete"
+                    >
+                      Удалить
+                    </button>
+                  </>
+                )}
               </div>
             </div>
               ))}

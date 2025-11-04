@@ -114,8 +114,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .tests_management_error p {
@@ -405,6 +409,41 @@
   color: #0c5460;
 }
 
+.test_status_external {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.test_card_external {
+  border: 2px solid #ffc107;
+  background: #fffef7;
+}
+
+.test_card_external .test_card_header {
+  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+}
+
+.test_external_notice {
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  text-align: center;
+  color: #856404;
+}
+
+.test_external_notice p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.test_external_notice p:first-child {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
 .test_card_content {
   padding: 20px;
 }
@@ -585,7 +624,7 @@
   .tests_management_container {
     padding: 10px;
   }
-  
+
   .tests_management_header {
     flex-direction: column;
     gap: 15px;
@@ -596,7 +635,7 @@
     padding: 15px;
     gap: 6px;
   }
-  
+
   .tests_management_direction_tab {
     padding: 8px 14px;
     font-size: 13px;
@@ -604,58 +643,58 @@
     text-align: center;
     min-width: fit-content;
   }
-  
+
   .tests_management_filters {
     padding: 15px;
   }
-  
+
   .tests_management_date_filters {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
-  
+
   .tests_management_date_filter_group {
     min-width: auto;
   }
-  
+
   .tests_management_clear_filters_btn {
     align-self: stretch;
     text-align: center;
   }
-  
+
   .tests_management_filter_buttons {
     flex-direction: column;
   }
-  
+
   .tests_management_filter_btn {
     text-align: center;
   }
-  
+
   .tests_management_pagination {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .tests_management_pagination_pages {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .test_card_header {
     flex-direction: column;
     gap: 10px;
     text-align: center;
   }
-  
+
   .test_card_info {
     grid-template-columns: 1fr;
   }
-  
+
   .test_card_actions {
     flex-direction: column;
   }
-  
+
   .tests_management_create_header,
   .tests_management_edit_header {
     flex-direction: column;
@@ -667,16 +706,16 @@
   .test_card_content {
     padding: 15px;
   }
-  
+
   .test_card_actions {
     padding: 15px;
   }
-  
+
   .question_preview_item {
     flex-direction: column;
     gap: 5px;
   }
-  
+
   .question_preview_type {
     align-self: flex-start;
   }
