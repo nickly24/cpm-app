@@ -17,8 +17,23 @@ export function ScanAttendance() {
             setScanHistory(JSON.parse(savedHistory));
         }
 
-        studentIdRef.current?.focus();
+        // Устанавливаем фокус на поле ввода при загрузке компонента
+        const timer = setTimeout(() => {
+            studentIdRef.current?.focus();
+        }, 100);
+        
+        return () => clearTimeout(timer);
     }, []);
+    
+    // Фокус на поле ввода при монтировании и после изменения isLoading
+    useEffect(() => {
+        if (!isLoading) {
+            const timer = setTimeout(() => {
+                studentIdRef.current?.focus();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isLoading]);
 
     // Сохранение истории в localStorage при изменении
     useEffect(() => {
@@ -107,6 +122,10 @@ export function ScanAttendance() {
         } finally {
             setIsLoading(false);
             setStudentId('');
+            // Возвращаем фокус на поле ввода после отправки
+            setTimeout(() => {
+                studentIdRef.current?.focus();
+            }, 100);
         }
     };
 
@@ -168,6 +187,15 @@ export function ScanAttendance() {
                                 return false;
                             }
                         }}
+                        onBlur={() => {
+                            // Возвращаем фокус на поле, если оно потеряло фокус
+                            // Небольшая задержка, чтобы не мешать нормальным действиям
+                            setTimeout(() => {
+                                if (!isLoading) {
+                                    studentIdRef.current?.focus();
+                                }
+                            }, 200);
+                        }}
                         disabled={isLoading}
                         autoComplete="off"
                         autoFocus
@@ -181,6 +209,10 @@ export function ScanAttendance() {
                         e.preventDefault();
                         e.stopPropagation();
                         handleSubmit(e);
+                        // Возвращаем фокус на поле ввода после клика
+                        setTimeout(() => {
+                            studentIdRef.current?.focus();
+                        }, 50);
                     }}
                     className="scan-submit-btn"
                     disabled={isLoading || !studentId.trim()}
