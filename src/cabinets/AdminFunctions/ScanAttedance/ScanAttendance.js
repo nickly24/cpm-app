@@ -113,18 +113,6 @@ export function ScanAttendance() {
         localStorage.removeItem('scanHistory');
     };
 
-    // Автоотправка при сканировании штрих-кода
-    // Сканеры вводят строку очень быстро, ждём небольшую паузу и отправляем без проверки длины
-    useEffect(() => {
-        if (studentId.length > 0) {
-            const timer = setTimeout(() => {
-                handleSubmit();
-            }, 800);
-            
-            return () => clearTimeout(timer);
-        }
-    }, [studentId]);
-
     return (
         <div className="scan-attendance-container">
             <h2>Сканирование посещаемости</h2>
@@ -158,8 +146,17 @@ export function ScanAttendance() {
                         disabled={isLoading}
                         autoComplete="off"
                         autoFocus
+                        placeholder="Введите ID студента или отсканируйте штрих-код"
                     />
                 </div>
+                
+                <button 
+                    type="submit" 
+                    className="scan-submit-btn"
+                    disabled={isLoading || !studentId.trim()}
+                >
+                    {isLoading ? 'Отправка...' : '📷 Отправить'}
+                </button>
                 
                 {isLoading && <div className="loading-indicator">Загрузка...</div>}
                 
@@ -234,10 +231,42 @@ export function ScanAttendance() {
                     border: 1px solid #ddd;
                     border-radius: 4px;
                     font-size: 16px;
+                    box-sizing: border-box;
                 }
                 
                 input[type="date"] {
                     padding: 9px;
+                }
+                
+                .scan-submit-btn {
+                    width: 100%;
+                    padding: 12px 20px;
+                    background: #667eea;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s, transform 0.1s;
+                    margin-top: 10px;
+                    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+                }
+                
+                .scan-submit-btn:hover:not(:disabled) {
+                    background: #5568d3;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+                }
+                
+                .scan-submit-btn:active:not(:disabled) {
+                    transform: translateY(0);
+                }
+                
+                .scan-submit-btn:disabled {
+                    background: #ccc;
+                    cursor: not-allowed;
+                    box-shadow: none;
                 }
                 
                 .loading-indicator {
