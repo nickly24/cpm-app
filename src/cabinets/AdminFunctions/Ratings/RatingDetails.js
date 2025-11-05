@@ -170,15 +170,20 @@ const RatingDetails = ({ ratingId, onBack }) => {
             <div className="details-grid">
               {details.exams.details && details.exams.details.length > 0 ? (
                 details.exams.details.map((exam, idx) => (
-                  <div key={idx} className="detail-card success">
+                  <div key={idx} className={`detail-card ${exam.score > 0 ? 'success' : 'failed'}`}>
                     <div className="card-header">
                       <h3 className="card-title">{exam.exam_name}</h3>
-                      <div className="card-score success">{exam.score.toFixed(2)}</div>
+                      <div className={`card-score ${exam.score > 0 ? 'success' : 'failed'}`}>{exam.score.toFixed(2)}</div>
                     </div>
                     <div className="card-body">
                       <div className="card-info">
                         <span className="info-label">Дата:</span>
                         <span className="info-value">{exam.exam_date}</span>
+                      </div>
+                      <div className="card-status">
+                        <span className={`status-badge ${exam.score > 0 ? 'success' : 'failed'}`}>
+                          {exam.status || (exam.score > 0 ? 'Сдан' : 'Не сдавал')}
+                        </span>
                       </div>
                     </div>
                   </div>
