@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { API_BASE_URL } from '../../../Config';
 import { API_EXAM_URL } from '../../../Config';
+import axios from '../../../api';
 export function ScanAttendance() {
     const [studentId, setStudentId] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -35,32 +36,20 @@ export function ScanAttendance() {
         setNotification(null);
         
         try {
-            const response = await fetch(`${API_BASE_URL}/api/add-attendance`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    studentId: studentId.trim(),
-                    date: date
-                })
+            const response = await axios.post(`${API_BASE_URL}/api/add-attendance`, {
+                studentId: studentId.trim(),
+                date: date
             });
             
-            const data = await response.json();
+            const data = response.data;
             
-            if (response.ok && data.status) {
+            if (data.status) {
                 // Получаем информацию о студенте
-                const studentInfoResponse = await fetch(`${API_BASE_URL}/api/get-class-name-by-studID`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        student_id: studentId.trim()
-                    })
+                const studentInfoResponse = await axios.post(`${API_BASE_URL}/api/get-class-name-by-studID`, {
+                    student_id: studentId.trim()
                 });
                 
-                const studentInfo = await studentInfoResponse.json();
+                const studentInfo = studentInfoResponse.data;
                 
                 if (studentInfo.status && studentInfo.data) {
                     // Добавляем в историю только при успешном добавлении (максимум 10 записей)
@@ -98,10 +87,20 @@ export function ScanAttendance() {
                 }, 5000);
             }
         } catch (error) {
+            // Обработка ошибок axios
+            const errorMessage = error.response?.data?.error || 
+                               error.response?.data?.message || 
+                               error.message || 
+                               '❌ Ошибка сети';
             setNotification({ 
-                message: '❌ Ошибка сети', 
+                message: errorMessage, 
                 isSuccess: false 
             });
+            
+            // Автоматически скрываем ошибку через 5 секунд
+            setTimeout(() => {
+                setNotification(null);
+            }, 5000);
         } finally {
             setIsLoading(false);
             setStudentId('');
