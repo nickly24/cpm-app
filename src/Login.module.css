@@ -1,82 +1,169 @@
 /* Login.module.css */
 
+.loginWrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 20px;
+  font-family: 'Montserrat', sans-serif;
+}
+
 .loginContainer {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
+  max-width: 440px;
+  width: 100%;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border: 1px solid rgba(2, 6, 23, 0.06);
+}
+
+.logoContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.2));
 }
 
 .loginTitle {
   text-align: center;
-  margin-bottom: 24px;
-  color: #333;
-  font-size: 24px;
-  font-weight: 600;
+  margin-bottom: 32px;
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .errorMessage {
-  color: #ff4d4f;
+  color: #dc2626;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   font-size: 14px;
+  padding: 12px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
 }
 
 .loginForm {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .formLabel {
   font-size: 14px;
-  color: #555;
-  font-weight: 500;
+  color: #475569;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .formInput {
-  padding: 10px 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: all 0.3s;
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 .formInput:focus {
-  border-color: #1890ff;
+  border-color: #667eea;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background-color: #ffffff;
+}
+
+.formInput::placeholder {
+  color: #94a3b8;
 }
 
 .submitButton {
-  padding: 10px 16px;
-  background-color: #1890ff;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  letter-spacing: 0.3px;
+  margin-top: 8px;
 }
 
-.submitButton:hover {
-  background-color: #40a9ff;
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .submitButton:disabled {
-  background-color: #d9d9d9;
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
-.submitButton:active {
-  background-color: #096dd9;
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .loginWrapper {
+    padding: 16px;
+  }
+
+  .loginContainer {
+    padding: 32px 24px;
+    border-radius: 12px;
+  }
+
+  .logo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .loginTitle {
+    font-size: 24px;
+    margin-bottom: 28px;
+  }
+
+  .formInput {
+    padding: 12px 14px;
+    font-size: 16px; /* Предотвращает зум на iOS */
+  }
+
+  .submitButton {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginContainer {
+    padding: 28px 20px;
+  }
+
+  .loginTitle {
+    font-size: 22px;
+  }
 }

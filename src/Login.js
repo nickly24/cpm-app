@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from './Login.module.css';
 import { useAuth } from './AuthContext';
+import { ReactComponent as Logo } from './cabinets/logo.svg';
 
 function Login() {
   const { login } = useAuth();
@@ -25,41 +26,46 @@ function Login() {
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <h2 className={styles.loginTitle}>Login</h2>
-      {error && <p className={styles.errorMessage}>{error}</p>}
-      <form onSubmit={handleSubmit} className={styles.loginForm}>
-        <div className={styles.formGroup}>
-          <label htmlFor="username" className={styles.formLabel}>Username:</label>
-          <input
-            type="text"
-            id="username"
-            className={styles.formInput}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+    <div className={styles.loginWrapper}>
+      <div className={styles.loginContainer}>
+        <div className={styles.logoContainer}>
+          <Logo className={styles.logo} />
         </div>
-        <div className={styles.formGroup}>
-          <label htmlFor="password" className={styles.formLabel}>Password:</label>
-          <input
-            type="password"
-            id="password"
-            className={styles.formInput}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button 
-          type="submit" 
-          className={styles.submitButton}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Loading...' : 'Login'}
-        </button>
-      </form>
-  </div>
+        <h2 className={styles.loginTitle}>Вход в систему</h2>
+        {error && <p className={styles.errorMessage}>{error}</p>}
+        <form onSubmit={handleSubmit} className={styles.loginForm}>
+          <div className={styles.formGroup}>
+            <label htmlFor="username" className={styles.formLabel}>Имя пользователя:</label>
+            <input
+              type="text"
+              id="username"
+              className={styles.formInput}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="password" className={styles.formLabel}>Пароль:</label>
+            <input
+              type="password"
+              id="password"
+              className={styles.formInput}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button 
+            type="submit" 
+            className={styles.submitButton}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Вход...' : 'Войти'}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
 
