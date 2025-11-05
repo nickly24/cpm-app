@@ -28,7 +28,10 @@ export function ScanAttendance() {
     }, [scanHistory]);
 
     const handleSubmit = async (e) => {
-        if (e) e.preventDefault();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         
         if (!studentId.trim()) return;
         
@@ -117,7 +120,8 @@ export function ScanAttendance() {
         <div className="scan-attendance-container">
             <h2>Сканирование посещаемости</h2>
             
-            <form onSubmit={handleSubmit}>
+            {/* Используем div вместо form, чтобы полностью исключить автоотправку */}
+            <div className="scan-form-wrapper">
                 <div className="form-group">
                     <label htmlFor="date">Дата:</label>
                     <input
@@ -138,9 +142,30 @@ export function ScanAttendance() {
                         value={studentId}
                         onChange={(e) => setStudentId(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            // Полностью блокируем Enter - сканеры часто добавляют его в конце
+                            if (e.key === 'Enter' || e.keyCode === 13) {
                                 e.preventDefault();
-                                handleSubmit();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                return false;
+                            }
+                        }}
+                        onKeyPress={(e) => {
+                            // Дополнительная блокировка Enter
+                            if (e.key === 'Enter' || e.keyCode === 13) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                return false;
+                            }
+                        }}
+                        onKeyUp={(e) => {
+                            // И еще раз для надежности
+                            if (e.key === 'Enter' || e.keyCode === 13) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                return false;
                             }
                         }}
                         disabled={isLoading}
@@ -151,7 +176,12 @@ export function ScanAttendance() {
                 </div>
                 
                 <button 
-                    type="submit" 
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSubmit(e);
+                    }}
                     className="scan-submit-btn"
                     disabled={isLoading || !studentId.trim()}
                 >
@@ -165,7 +195,7 @@ export function ScanAttendance() {
                         {notification.message}
                     </div>
                 )}
-            </form>
+            </div>
             
             {/* История сканирований */}
             <div className="scan-history">
@@ -212,6 +242,11 @@ export function ScanAttendance() {
                     margin-top: 0;
                     color: #333;
                     text-align: center;
+                }
+                
+                .scan-form-wrapper {
+                    display: flex;
+                    flex-direction: column;
                 }
                 
                 .form-group {
