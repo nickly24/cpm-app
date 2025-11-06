@@ -11,7 +11,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
     endDate: '',
     timeLimitMinutes: 30,
     questions: [],
-    isActive: true
+    isActive: true,
+    visible: false
   });
 
   const [currentQuestion, setCurrentQuestion] = useState({
@@ -68,7 +69,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
         endDate: editingTest.endDate ? new Date(editingTest.endDate).toISOString().slice(0, 16) : '',
         timeLimitMinutes: editingTest.timeLimitMinutes || 30,
         questions: processedQuestions,
-        isActive: editingTest.isActive !== undefined ? editingTest.isActive : true
+        isActive: editingTest.isActive !== undefined ? editingTest.isActive : true,
+        visible: editingTest.visible !== undefined ? editingTest.visible : false
       });
     }
   }, [editingTest, mode]);
@@ -301,7 +303,8 @@ export default function TestCreate({ editingTest = null, onTestCreated = null, o
           endDate: '',
           timeLimitMinutes: 30,
           questions: [],
-          isActive: true
+          isActive: true,
+          visible: false
         });
         
         if (onTestCreated) {

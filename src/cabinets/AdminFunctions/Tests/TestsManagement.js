@@ -121,6 +121,35 @@ const TestsManagement = () => {
     }
   };
 
+  const handleToggleVisibility = async (testId) => {
+    // Проверяем, не является ли это внешним тестом
+    const test = tests.find(t => t.id === testId || t._id === testId);
+    if (test && (test.isExternal || test.externalTest)) {
+      alert('Управление видимостью недоступно для тестов, проведенных вне платформы CPM-LMS.');
+      return;
+    }
+    
+    try {
+      const response = await axios.put(`${API_EXAM_URL}/test/${testId}/toggle-visibility`);
+      // Обновляем тест в списке
+      setTests(tests.map(t => {
+        if (t.id === testId || t._id === testId) {
+          return { ...t, visible: response.data.visible };
+        }
+        return t;
+      }));
+      // Показываем сообщение об успехе
+      alert(response.data.message);
+    } catch (error) {
+      console.error('Ошибка при переключении видимости:', error);
+      if (error.response?.status === 404) {
+        alert('Тест не найден');
+      } else {
+        alert('Ошибка при переключении видимости теста');
+      }
+    }
+  };
+
   const handleTestCreated = () => {
     setCurrentView('list');
     fetchTestsByDirection(selectedDirection);
@@ -469,6 +498,13 @@ const TestsManagement = () => {
                       className="test_action_btn test_action_edit"
                     >
                       Редактировать
+                    </button>
+                    <button
+                      onClick={() => handleToggleVisibility(test.id)}
+                      className={`test_action_btn test_action_toggle ${test.visible ? 'test_visible_on' : 'test_visible_off'}`}
+                      title={test.visible ? 'Скрыть ответы от студентов' : 'Показать ответы студентам'}
+                    >
+                      {test.visible ? '👁️ Скрыть ответы' : '👁️‍🗨️ Показать ответы'}
                     </button>
                     <button
                       onClick={() => handleDeleteTest(test.id)}

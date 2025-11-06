@@ -573,6 +573,33 @@
   background: #c82333;
 }
 
+.test_action_toggle {
+  background: #6c757d;
+  color: white;
+}
+
+.test_action_toggle:hover {
+  background: #5a6268;
+}
+
+.test_action_toggle.test_visible_on {
+  background: #28a745;
+  color: white;
+}
+
+.test_action_toggle.test_visible_on:hover {
+  background: #218838;
+}
+
+.test_action_toggle.test_visible_off {
+  background: #6c757d;
+  color: white;
+}
+
+.test_action_toggle.test_visible_off:hover {
+  background: #5a6268;
+}
+
 /* Виды создания и редактирования */
 .tests_management_create,
 .tests_management_edit {
