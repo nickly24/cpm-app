@@ -94,7 +94,7 @@ export default function CreateZap({ onBack }) {
         return (
             <div className="create-zap-container">
                 <div className="success-message">
-                    ✅ Запрос успешно создан! Номер обращения: #{new Date().getTime()}
+                    ✅ Информация о пропуске успешно отправлена!
                 </div>
             </div>
         );
@@ -102,24 +102,28 @@ export default function CreateZap({ onBack }) {
 
     return (
         <div className="create-zap-container">
-            <h2>Создать запрос на отгул</h2>
+            <h2>Подать информацию о пропуске занятия по болезни или иной уважительной причине</h2>
+            
+            <div className="form-description">
+                <p>Сообщите о пропуске занятия по болезни или иной уважительной причине. Обязательно прикрепите подтверждающий документ. При отсутствии документа пропуск будет засчитан как прогул.</p>
+            </div>
             
             {error && <div className="error-message">{error}</div>}
             
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>Текст запроса:</label>
+                    <label>Коротко опишите обстоятельства пропуска:</label>
                     <textarea
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        placeholder="Опишите причину отгула..."
+                        placeholder="Опишите обстоятельства пропуска..."
                         rows="5"
                         disabled={isLoading}
                     />
                 </div>
 
                 <div className="form-group">
-                    <label>Фотографии справок (необязательно):</label>
+                    <label>Подтверждающий документ (фото/скан):</label>
                     <input
                         type="file"
                         accept="image/jpeg,image/jpg,image/heic,application/pdf"
@@ -127,7 +131,7 @@ export default function CreateZap({ onBack }) {
                         onChange={handleFileChange}
                         disabled={isLoading}
                     />
-                    <div className="help-text">Можно загрузить несколько файлов. Форматы: JPG, HEIC, PDF. Макс. размер: 5MB</div>
+                    <div className="help-text">Форматы: JPG, HEIC, PDF. Максимальный размер: 5 МБ.</div>
                 </div>
 
                 {images.length > 0 && (
@@ -157,12 +161,16 @@ export default function CreateZap({ onBack }) {
                     </div>
                 )}
 
+                <div className="form-comment">
+                    <p><strong>Напоминаем:</strong> при трёх пропусках без уважительной причины вы будете отчислены.</p>
+                </div>
+
                 <div className="form-actions">
                     <button type="button" onClick={onBack} disabled={isLoading}>
                         Отмена
                     </button>
                     <button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Отправка...' : 'Отправить запрос'}
+                        {isLoading ? 'Отправка...' : 'Отправить информацию'}
                     </button>
                 </div>
             </form>
