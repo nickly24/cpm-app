@@ -19,6 +19,7 @@ export default function Tests({ onBack }) {
   const [testStats, setTestStats] = useState({});
   const [testReview, setTestReview] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [testsPagination, setTestsPagination] = useState(null); // { current_page, total_pages, total_items, items_per_page }
   const [filter, setFilter] = useState('all'); // 'all', 'available', 'upcoming', 'completed', 'missed'
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState({
@@ -26,6 +27,7 @@ export default function Tests({ onBack }) {
     endDate: ''
   });
   const [showDirections, setShowDirections] = useState(true);
+  const testsPerPage = 20;
 
   // Загрузка направлений при монтировании компонента
   useEffect(() => {
@@ -60,7 +62,8 @@ export default function Tests({ onBack }) {
       const firstDirection = directions[0];
       setSelectedDirection(firstDirection);
       setShowDirections(false);
-      loadTests(firstDirection);
+      setCurrentPage(1);
+      loadTests(firstDirection, 1, testsPerPage);
     }
   }, [directions, selectedDirection]);
 
@@ -116,14 +119,21 @@ export default function Tests({ onBack }) {
     }
   };
 
-  const loadTests = async (direction) => {
+  const loadTests = async (direction, page = 1, limit = 20) => {
     try {
       setLoading(true);
       const directionName = typeof direction === 'string' ? direction : direction.name;
-      const response = await axios.get(`${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}`);
-      setTests(response.data);
-      
-      // Загружаем сданные тесты для этого направления
+      const url = `${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}?page=${page}&limit=${limit}`;
+      const response = await axios.get(url);
+      const data = response.data;
+      // Новый формат с пагинацией: { tests, external_tests, pagination }
+      const list = Array.isArray(data) ? data : [...(data.tests || []), ...(data.external_tests || [])];
+      setTests(list);
+      if (data.pagination) {
+        setTestsPagination(data.pagination);
+      } else {
+        setTestsPagination(null);
+      }
       await loadCompletedTests();
     } catch (err) {
       setError('Не удалось загрузить тесты: ' + err.message);
@@ -345,7 +355,7 @@ export default function Tests({ onBack }) {
               setFilter('all');
               setSearchTerm('');
               setDateFilter({ startDate: '', endDate: '' });
-              loadTests(direction);
+              loadTests(direction, 1, testsPerPage);
             }}
           >
             {direction.name}
@@ -368,6 +378,9 @@ export default function Tests({ onBack }) {
           onBack={goBackToTests}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
+          onPageChange={(page) => { setCurrentPage(page); loadTests(selectedDirection, page, testsPerPage); }}
+          testsPagination={testsPagination}
+          testsPerPage={testsPerPage}
           filter={filter}
           setFilter={setFilter}
           searchTerm={searchTerm}
@@ -427,7 +440,8 @@ function DirectionsList({ directions, loading, error, onSelectDirection }) {
 function TestsList({ 
   direction, tests, completedTests, testStats, loading, error, 
   onStartTest, onStartPractice, onViewResults, onBack,
-  currentPage, setCurrentPage, filter, setFilter, searchTerm, setSearchTerm,
+  currentPage, setCurrentPage, onPageChange, testsPagination, testsPerPage = 20,
+  filter, setFilter, searchTerm, setSearchTerm,
   dateFilter, setDateFilter
 }) {
   if (error) {
@@ -595,8 +609,9 @@ function TestsList({
   else if (filter === 'missed') testsToShow = filteredMissed;
   else testsToShow = [...filteredAvailable, ...filteredUpcoming, ...filteredCompleted, ...filteredMissed, ...filteredExternal];
 
-  const paginatedTests = paginateTests(testsToShow, currentPage);
-  const totalPages = Math.ceil(testsToShow.length / 4);
+  const useServerPagination = testsPagination && testsPagination.total_pages != null;
+  const paginatedTests = useServerPagination ? testsToShow : paginateTests(testsToShow, currentPage);
+  const totalPages = useServerPagination ? testsPagination.total_pages : Math.ceil(testsToShow.length / 4);
 
   const TestCard = ({ test, type }) => {
     // Проверяем, является ли тест внешним
@@ -856,7 +871,7 @@ function TestsList({
         <div className="tests_pagination">
           <button 
             className="tests_pagination_btn"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            onClick={() => useServerPagination && onPageChange ? onPageChange(Math.max(1, currentPage - 1)) : setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
           >
             ← Предыдущая
@@ -867,7 +882,7 @@ function TestsList({
               <button
                 key={page}
                 className={`tests_pagination_page ${currentPage === page ? 'active' : ''}`}
-                onClick={() => setCurrentPage(page)}
+                onClick={() => useServerPagination && onPageChange ? onPageChange(page) : setCurrentPage(page)}
               >
                 {page}
               </button>
@@ -876,7 +891,7 @@ function TestsList({
           
           <button 
             className="tests_pagination_btn"
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            onClick={() => useServerPagination && onPageChange ? onPageChange(Math.min(totalPages, currentPage + 1)) : setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
           >
             Следующая →

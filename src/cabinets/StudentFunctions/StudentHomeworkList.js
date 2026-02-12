@@ -4,74 +4,79 @@ import { API_BASE_URL } from '../../Config';
 import './StudentHomeworkList.modern.css';
 import { useAuth } from '../../AuthContext';
 
+const homeworksPerPage = 6;
+
 const StudentHomeworkList = () => {
   const { user } = useAuth();
   const [homeworks, setHomeworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const studentId = user?.id;
-  const homeworksPerPage = 6;
   const [statusFilter, setStatusFilter] = useState('all'); // all | done | undone
   const [typeFilter, setTypeFilter] = useState('all'); // all | ДЗНВ | ОВ
 
-  useEffect(() => {
-    const fetchHomeworks = async () => {
-      try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/get-homeworks-student`,
-          { studentId: studentId },
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+  const fetchHomeworks = async (page = 1, homeworkType = null) => {
+    if (!studentId) return;
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${API_BASE_URL}/api/get-homeworks-student`,
+        {
+          studentId,
+          page,
+          limit: homeworksPerPage,
+          homework_type: homeworkType === 'all' ? null : homeworkType
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
 
-        if (response.data?.status && Array.isArray(response.data?.res)) {
-          // Сортируем все задания по дате (убрали фильтрацию FFFF)
-          const filteredHomeworks = response.data.res
-            .map(hw => ({
-              ...hw,
-              deadline: new Date(hw.deadline)
-            }))
-            .sort((a, b) => b.deadline - a.deadline);
-          
-          setHomeworks(filteredHomeworks);
+      if (response.data?.status && Array.isArray(response.data?.res)) {
+        const list = response.data.res.map(hw => ({
+          ...hw,
+          deadline: hw.deadline ? new Date(hw.deadline) : null
+        }));
+        setHomeworks(list);
+        const p = response.data.pagination;
+        if (p) {
+          setTotalPages(p.total_pages || 1);
+          setTotalItems(p.total_items || list.length);
         } else {
-          throw new Error('Неверный формат данных');
+          setTotalPages(1);
+          setTotalItems(list.length);
         }
-      } catch (err) {
-        setError(err.message || 'Ошибка загрузки заданий');
-        console.error('Ошибка:', err);
-      } finally {
-        setLoading(false);
+      } else {
+        throw new Error('Неверный формат данных');
       }
-    };
+    } catch (err) {
+      setError(err.message || 'Ошибка загрузки заданий');
+      console.error('Ошибка:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchHomeworks();
-  }, [studentId]);
+  useEffect(() => {
+    fetchHomeworks(currentPage, typeFilter);
+  }, [studentId, currentPage, typeFilter]);
 
-  // Фильтрация
+  // Фильтрация по статусу в рамках загруженной страницы
   const filteredHomeworks = homeworks.filter(hw => {
     const isSubmitted = (hw.status || '').includes('сдано');
     const isFFFF = (hw.status || '').includes('FFFF');
     const matchesStatus =
       statusFilter === 'all' ? true : statusFilter === 'done' ? isSubmitted : !isSubmitted || isFFFF;
-    const matchesType = typeFilter === 'all' ? true : (hw.homework_type === typeFilter);
-    return matchesStatus && matchesType;
+    return matchesStatus;
   });
 
-  // Пагинация
-  const totalPages = Math.ceil(filteredHomeworks.length / homeworksPerPage) || 1;
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const indexOfLastHomework = safeCurrentPage * homeworksPerPage;
-  const indexOfFirstHomework = indexOfLastHomework - homeworksPerPage;
-  const currentHomeworks = filteredHomeworks.slice(indexOfFirstHomework, indexOfLastHomework);
+  const currentHomeworks = filteredHomeworks;
 
   const getCardColor = (deadline, status) => {
     if (status.includes('сдано')) return 'submitted';
-    
+    if (!deadline) return 'pending';
     const today = new Date();
     const timeDiff = deadline.getTime() - today.getTime();
     const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
@@ -83,6 +88,7 @@ const StudentHomeworkList = () => {
   };
 
   const formatDate = (date) => {
+    if (!date) return '';
     return date.toLocaleDateString('ru-RU', {
       day: 'numeric',
       month: 'long',
