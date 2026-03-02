@@ -27,7 +27,8 @@ export default function Tests({ onBack }) {
     endDate: ''
   });
   const [showDirections, setShowDirections] = useState(true);
-  const testsPerPage = 20;
+  const testsPerPage = 6;
+  const [serverTimeMoscow, setServerTimeMoscow] = useState(null); // время по Москве с сервера для проверки доступности
 
   // Загрузка направлений при монтировании компонента
   useEffect(() => {
@@ -84,57 +85,25 @@ export default function Tests({ onBack }) {
     return user?.id;
   };
 
-  const loadCompletedTests = async () => {
-    const studentId = getStudentId();
-    if (!studentId) return;
-
-    try {
-      const response = await axios.get(`${API_EXAM_URL}/test-sessions/student/${studentId}`);
-      const data = response.data;
-        console.log('Loaded completed tests:', data);
-        setCompletedTests(data);
-        
-        // Загружаем детальную статистику для каждого теста
-        const statsPromises = data.map(async (test) => {
-          try {
-          const statsResponse = await axios.get(`${API_EXAM_URL}/test-session/${test.id}/stats`);
-          const stats = statsResponse.data;
-              return { testId: test.testId, stats };
-          } catch (err) {
-            console.error('Ошибка загрузки статистики для теста', test.testId, err);
-          }
-          return { testId: test.testId, stats: null };
-        });
-        
-        const statsResults = await Promise.all(statsPromises);
-        const statsMap = {};
-        statsResults.forEach(({ testId, stats }) => {
-          if (stats) {
-            statsMap[testId] = stats;
-          }
-        });
-        setTestStats(statsMap);
-    } catch (err) {
-      console.error('Ошибка загрузки сданных тестов:', err);
-    }
-  };
-
-  const loadTests = async (direction, page = 1, limit = 20) => {
+  const loadTests = async (direction, page = 1, limit = 6) => {
     try {
       setLoading(true);
       const directionName = typeof direction === 'string' ? direction : direction.name;
-      const url = `${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}?page=${page}&limit=${limit}`;
+      // Один запрос: тесты по направлению + все сессии студента + статистика по сессиям
+      const url = `${API_EXAM_URL}/tests/${encodeURIComponent(directionName)}/with-sessions`;
       const response = await axios.get(url);
       const data = response.data;
-      // Новый формат с пагинацией: { tests, external_tests, pagination }
-      const list = Array.isArray(data) ? data : [...(data.tests || []), ...(data.external_tests || [])];
+      const list = data.tests || [];
       setTests(list);
-      if (data.pagination) {
-        setTestsPagination(data.pagination);
-      } else {
-        setTestsPagination(null);
-      }
-      await loadCompletedTests();
+      setTestsPagination(null);
+      const sessions = data.sessions || [];
+      setCompletedTests(sessions);
+      setServerTimeMoscow(data.serverTimeMoscow || null);
+      const statsMap = {};
+      sessions.forEach((s) => {
+        if (s.testId != null && s.stats) statsMap[String(s.testId)] = s.stats;
+      });
+      setTestStats(statsMap);
     } catch (err) {
       setError('Не удалось загрузить тесты: ' + err.message);
     } finally {
@@ -145,17 +114,27 @@ export default function Tests({ onBack }) {
   const loadTestFromSession = async (session) => {
     try {
       setLoading(true);
-      
-      // Проверяем, не завершен ли уже тест
+
       if (session.isCompleted) {
         setError('Этот тест уже был завершен. Повторное прохождение не разрешено.');
         localStorage.removeItem('testSession');
         return;
       }
-      
+
       const response = await axios.get(`${API_EXAM_URL}/test/${session.testId}`);
-      setCurrentTest(response.data);
+      const testData = response.data;
+      // Восстанавливаем порядок вопросов, как был при старте сессии
+      if (session.questionOrder && session.questionOrder.length && testData.questions) {
+        const orderMap = new Map(session.questionOrder.map((id, i) => [id, i]));
+        testData.questions = [...testData.questions].sort((a, b) => {
+          const ai = orderMap.get(a.questionId) ?? 9999;
+          const bi = orderMap.get(b.questionId) ?? 9999;
+          return ai - bi;
+        });
+      }
+      setCurrentTest(testData);
       setTestSession(session);
+      setIsPracticeMode(!!session.isPracticeMode);
     } catch (err) {
       setError('Не удалось восстановить тест: ' + err.message);
       localStorage.removeItem('testSession');
@@ -199,19 +178,31 @@ export default function Tests({ onBack }) {
   };
 
   const startTest = async (testId, practiceMode = false) => {
-    // Проверяем, не является ли это внешним тестом
     const test = tests.find(t => t.id === testId || t._id === testId);
     if (test && (test.isExternal || test.externalTest)) {
       setError('Этот тест проводился вне платформы CPM-LMS и недоступен для прохождения.');
       return;
     }
-    
-    // Проверяем, не сдан ли уже этот тест (только если не режим тренировки)
-    const isAlreadyCompleted = completedTests.some(completed => completed.testId === testId);
+
+    const isAlreadyCompleted = completedTests.some(c => String(c.testId) === String(testId));
     if (isAlreadyCompleted && !practiceMode) {
       setError('Этот тест уже сдан. Повторное прохождение не разрешено.');
       return;
     }
+
+    // Восстановление активной сессии из localStorage (тот же тест, время не истекло)
+    try {
+      const saved = localStorage.getItem('testSession');
+      if (saved && !practiceMode) {
+        const parsed = JSON.parse(saved);
+        const endTime = (parsed.startTime || 0) + (parsed.timeLimit || 0);
+        if (String(parsed.testId) === String(testId) && endTime > Date.now()) {
+          setLoading(true);
+          await loadTestFromSession(parsed);
+          return;
+        }
+      }
+    } catch (_) {}
 
     try {
       setLoading(true);
@@ -239,18 +230,18 @@ export default function Tests({ onBack }) {
       setCurrentTest(shuffledTestData);
       setIsPracticeMode(practiceMode);
       
-      // Создаем новую сессию теста
       const newSession = {
         testId: testId,
         testTitle: testData.title,
         startTime: Date.now(),
-        timeLimit: testData.timeLimitMinutes * 60 * 1000, // в миллисекундах
+        timeLimit: testData.timeLimitMinutes * 60 * 1000,
         currentQuestionIndex: 0,
         answers: [],
+        questionOrder: shuffledQuestions.map(q => q.questionId),
         isCompleted: false,
         isPracticeMode: practiceMode
       };
-      
+
       setTestSession(newSession);
       localStorage.setItem('testSession', JSON.stringify(newSession));
     } catch (err) {
@@ -274,20 +265,18 @@ export default function Tests({ onBack }) {
     setShowDirections(false);
     localStorage.removeItem('testSession');
     
-    // Обновляем список сданных тестов
-    await loadCompletedTests();
+    // Обновляем список тестов и сессий одним запросом
+    if (selectedDirection) await loadTests(selectedDirection);
   };
 
   const goBackToTests = async () => {
     setCurrentTest(null);
     setTestSession(null);
     setIsPracticeMode(false);
-    setError(null); // Очищаем ошибки
+    setError(null);
     setShowDirections(false);
-    localStorage.removeItem('testSession');
-    
-    // Обновляем список сданных тестов
-    await loadCompletedTests();
+    // Сессию не удаляем — при повторном «Начать тест» она восстановится с таймером и ответами
+    if (selectedDirection) await loadTests(selectedDirection);
   };
 
   const goBackToDirections = () => {
@@ -327,7 +316,12 @@ export default function Tests({ onBack }) {
       <TestComponent 
         test={currentTest}
         session={testSession}
-        onComplete={(results) => setTestResults(results)}
+        onComplete={(results) => {
+          if (results) {
+            setTestResults(results);
+            if (selectedDirection) loadTests(selectedDirection); // один запрос: тесты + сессии
+          }
+        }}
         onBack={goBackToTests}
         getStudentId={getStudentId}
         isPracticeMode={isPracticeMode}
@@ -370,6 +364,7 @@ export default function Tests({ onBack }) {
           tests={tests}
           completedTests={completedTests}
           testStats={testStats}
+          serverTimeMoscow={serverTimeMoscow}
           loading={loading}
           error={error}
           onStartTest={startTest}
@@ -379,7 +374,7 @@ export default function Tests({ onBack }) {
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           onPageChange={(page) => { setCurrentPage(page); loadTests(selectedDirection, page, testsPerPage); }}
-          testsPagination={testsPagination}
+          testsPagination={null}
           testsPerPage={testsPerPage}
           filter={filter}
           setFilter={setFilter}
@@ -438,12 +433,64 @@ function DirectionsList({ directions, loading, error, onSelectDirection }) {
 
 // Компонент списка тестов
 function TestsList({ 
-  direction, tests, completedTests, testStats, loading, error, 
+  direction, tests, completedTests, testStats, serverTimeMoscow, loading, error, 
   onStartTest, onStartPractice, onViewResults, onBack,
-  currentPage, setCurrentPage, onPageChange, testsPagination, testsPerPage = 20,
+  currentPage, setCurrentPage, onPageChange, testsPagination, testsPerPage = 6,
   filter, setFilter, searchTerm, setSearchTerm,
   dateFilter, setDateFilter
 }) {
+  // Время по Москве с сервера — для проверки доступности (нельзя обойти сменой времени на устройстве)
+  const nowForAvailability = serverTimeMoscow ? new Date(serverTimeMoscow) : new Date();
+  const MetaIcon = ({ name }) => {
+    const common = {
+      width: 16,
+      height: 16,
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: '#6f42c1',
+      strokeWidth: 1.9,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+      className: 'tests_meta_icon_svg'
+    };
+
+    if (name === 'clock') {
+      return (
+        <svg {...common} aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      );
+    }
+
+    if (name === 'calendar') {
+      return (
+        <svg {...common} aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M8 3v4M16 3v4M3 10h18" />
+        </svg>
+      );
+    }
+
+    return (
+      <svg {...common} aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8h.01M12 11v5" />
+      </svg>
+    );
+  };
+
+  const formatDateHuman = (dateValue) => {
+    if (!dateValue) return '—';
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return '—';
+    return dt.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   if (error) {
     return (
       <div className="student-section">
@@ -470,9 +517,9 @@ function TestsList({
     );
   }
 
-  // Группировка тестов
+  // Группировка тестов (доступность по московскому времени с сервера)
   const groupTests = (tests) => {
-    const now = new Date();
+    const now = nowForAvailability;
     const available = [];
     const upcoming = [];
     const completed = [];
@@ -488,8 +535,11 @@ function TestsList({
       
       const startDate = new Date(test.startDate);
       const endDate = new Date(test.endDate);
-      const isCompleted = completedTests.some(completed => completed.testId === test.id);
-      
+      // Бэкенд уже присылает isCompleted по сессиям студента; дублируем проверкой по локальному списку
+      const isCompleted =
+        test.isCompleted === true ||
+        (getTestId(test) && completedTests.some(c => String(c.testId) === getTestId(test)));
+
       if (isCompleted) {
         completed.push(test);
       } else if (now >= startDate && now <= endDate) {
@@ -561,20 +611,24 @@ function TestsList({
   };
 
   // Пагинация
-  const paginateTests = (tests, page, itemsPerPage = 4) => {
+  const paginateTests = (tests, page, itemsPerPage = 6) => {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return tests.slice(startIndex, endIndex);
   };
 
+  const getTestId = (test) => String(test?.id ?? test?._id ?? '');
   const isTestCompleted = (test) => {
-    return completedTests.some(completed => completed.testId === test.id);
+    if (test?.isCompleted === true) return true;
+    const tid = getTestId(test);
+    return tid && completedTests.some(c => String(c.testId) === tid);
   };
-
   const getTestResult = (test) => {
-    const completedTest = completedTests.find(completed => completed.testId === test.id);
-    const stats = testStats[test.id];
-    return { ...completedTest, stats };
+    const tid = getTestId(test);
+    const completedTest = tid ? completedTests.find(c => String(c.testId) === tid) : null;
+    // Статистика сохранена по session.testId (строка) — ищем по тому же ключу
+    const stats = testStats[tid] ?? testStats[test?.id] ?? testStats[test?._id];
+    return completedTest ? { ...completedTest, stats } : null;
   };
 
   const groupedTests = groupTests(tests);
@@ -609,9 +663,8 @@ function TestsList({
   else if (filter === 'missed') testsToShow = filteredMissed;
   else testsToShow = [...filteredAvailable, ...filteredUpcoming, ...filteredCompleted, ...filteredMissed, ...filteredExternal];
 
-  const useServerPagination = testsPagination && testsPagination.total_pages != null;
-  const paginatedTests = useServerPagination ? testsToShow : paginateTests(testsToShow, currentPage);
-  const totalPages = useServerPagination ? testsPagination.total_pages : Math.ceil(testsToShow.length / 4);
+  const paginatedTests = testsToShow;
+  const totalPages = 1;
 
   const TestCard = ({ test, type }) => {
     // Проверяем, является ли тест внешним
@@ -630,17 +683,23 @@ function TestsList({
             </div>
           </div>
           
-          <div className="tests_test_info">
+          <div className="tests_test_info tests_test_info_compact">
             <p className="tests_external_notice">
               <strong>⚠️ Тест проводился вне платформы CPM-LMS</strong>
             </p>
-            {test.date && (
-              <p><strong>Дата проведения:</strong> {new Date(test.date).toLocaleDateString('ru-RU')}</p>
-            )}
-            
+            <div className="tests_meta_row">
+              <span className="tests_meta_icon"><MetaIcon name="calendar" /></span>
+              <span><strong>Дата:</strong> {formatDateHuman(test.date)}</span>
+            </div>
             {hasResult ? (
-              <div className="tests_test_completed_info">
-                <p><strong>Результат:</strong> {test.rate} баллов</p>
+              <div className="tests_test_completed_info tests_score_card">
+                <div className="tests_score_head">
+                  <span>Рейтинговый балл</span>
+                  <strong>{test.rate} / 100</strong>
+                </div>
+                <div className="tests_score_progress">
+                  <div className="tests_score_progress_fill" style={{ width: `${Math.max(0, Math.min(100, Number(test.rate) || 0))}%` }} />
+                </div>
               </div>
             ) : (
               <p className="tests_test_status">Результат отсутствует</p>
@@ -648,46 +707,58 @@ function TestsList({
           </div>
           
           <div className="tests_test_actions">
-            <button className="tests_start_btn disabled" disabled>
-              Недоступен для прохождения
-            </button>
-            {!hasResult && (
-              <p className="tests_external_no_result">Результат не добавлен в систему</p>
+            {!hasResult ? (
+              <p className="tests_external_no_result">Результат пока не добавлен в систему</p>
+            ) : (
+              <p className="tests_external_no_result">Прохождение недоступно (вне платформы)</p>
             )}
           </div>
         </div>
       );
     }
     
-    // Логика для обычных тестов
+    // Логика для обычных тестов (доступность по Москве с сервера)
     const completed = isTestCompleted(test);
     const testResult = getTestResult(test);
-    const now = new Date();
+    const now = nowForAvailability;
     const startDate = new Date(test.startDate);
     const endDate = new Date(test.endDate);
     const available = now >= startDate && now <= endDate;
 
+    const ratingScore = parseInt(testResult?.score, 10) || 0;
+    const showAsCompleted = completed;
     return (
-      <div key={test.id} className={`tests_test_card ${completed ? 'completed' : ''} ${type}`}>
+      <div key={test.id} className={`tests_test_card ${showAsCompleted ? 'completed' : ''} ${type}`}>
         <div className="tests_test_card_header">
           <h3 className="tests_test_title">{test.title}</h3>
-          <div className={`tests_test_type_badge ${type}`}>
-            {type === 'available' && 'Доступен'}
-            {type === 'upcoming' && 'Скоро'}
-            {type === 'completed' && 'Сдан'}
-            {type === 'missed' && 'Пропущен'}
+          <div className={`tests_test_type_badge ${showAsCompleted ? 'completed' : type}`}>
+            {showAsCompleted && 'Сдан'}
+            {!showAsCompleted && type === 'available' && 'Доступен'}
+            {!showAsCompleted && type === 'upcoming' && 'Скоро'}
+            {!showAsCompleted && type === 'missed' && 'Пропущен'}
           </div>
         </div>
-        
-        <div className="tests_test_info">
-          <p><strong>Время выполнения:</strong> {test.timeLimitMinutes} минут</p>
-          <p><strong>Период проведения:</strong></p>
-          <p>{new Date(test.startDate).toLocaleDateString()} - {new Date(test.endDate).toLocaleDateString()}</p>
-          
-          {completed && testResult ? (
-            <div className="tests_test_completed_info">
-              <p><strong>Рейтинговый балл:</strong> {parseInt(testResult.score) || 0} из 100</p>
-              {testResult.stats ? (
+
+        <div className="tests_test_info tests_test_info_compact">
+          <div className="tests_meta_row">
+            <span className="tests_meta_icon"><MetaIcon name="clock" /></span>
+            <span><strong>Время:</strong> {test.timeLimitMinutes} мин.</span>
+          </div>
+          <div className="tests_meta_row">
+            <span className="tests_meta_icon"><MetaIcon name="calendar" /></span>
+            <span><strong>Период:</strong> {formatDateHuman(test.startDate)} — {formatDateHuman(test.endDate)}</span>
+          </div>
+
+          {showAsCompleted ? (
+            <div className="tests_test_completed_info tests_score_card">
+              <div className="tests_score_head">
+                <span>Рейтинговый балл</span>
+                <strong>{ratingScore} / 100</strong>
+              </div>
+              <div className="tests_score_progress">
+                <div className="tests_score_progress_fill" style={{ width: `${Math.max(0, Math.min(100, ratingScore))}%` }} />
+              </div>
+              {testResult?.stats ? (
                 <>
                   <p><strong>Правильных ответов:</strong> {testResult.stats.correctAnswers || 0} из {testResult.stats.totalQuestions || 0}</p>
                   <p><strong>Точность:</strong> {testResult.stats.accuracy || 0}%</p>
@@ -695,12 +766,12 @@ function TestsList({
               ) : (
                 <p><em>Загрузка статистики...</em></p>
               )}
-              <p><strong>Время выполнения:</strong> {testResult.timeSpentMinutes || 0} мин</p>
+              <p><strong>Время выполнения:</strong> {testResult?.timeSpentMinutes ?? 0} мин</p>
             </div>
           ) : type === 'upcoming' ? (
-            <p className="tests_test_status upcoming">Начнется {new Date(test.startDate).toLocaleDateString()}</p>
+            <p className="tests_test_status upcoming">Начнется {formatDateHuman(test.startDate)}</p>
           ) : type === 'missed' ? (
-            <p className="tests_test_status missed">Пропущен - закончился {new Date(test.endDate).toLocaleDateString()}</p>
+            <p className="tests_test_status missed">Закончился {formatDateHuman(test.endDate)}</p>
           ) : (
             <p className={`tests_test_status ${available ? 'available' : 'unavailable'}`}>
               {available ? 'Доступен' : 'Недоступен'}
@@ -709,10 +780,10 @@ function TestsList({
         </div>
         
         <div className="tests_test_actions">
-          {!completed && available && (
+          {!completed && available && (test.canStart !== false) && (
             <button 
               className="tests_start_btn enabled"
-              onClick={() => onStartTest(test.id)}
+              onClick={() => onStartTest(test.id ?? test._id)}
             >
               Начать тест
             </button>
@@ -720,31 +791,25 @@ function TestsList({
           
           {completed && (
             <>
-              <button 
-                className="tests_view_results_btn"
-                onClick={() => onViewResults(test.id, testResult.id)}
-              >
-                Посмотреть результаты
-              </button>
+              {testResult?.id && (
+                <button 
+                  className="tests_view_results_btn"
+                  onClick={() => onViewResults(test.id ?? test._id, testResult.id)}
+                >
+                  Посмотреть результаты
+                </button>
+              )}
               <button 
                 className="tests_practice_btn"
-                onClick={() => onStartPractice(test.id)}
+                onClick={() => onStartPractice(test.id ?? test._id)}
               >
                 Потренироваться
               </button>
             </>
           )}
           
-          {type === 'upcoming' && (
-            <button className="tests_start_btn disabled" disabled>
-              Скоро будет доступен
-            </button>
-          )}
-          
-          {type === 'missed' && (
-            <button className="tests_start_btn disabled" disabled>
-              Пропущен - больше недоступен
-            </button>
+          {type === 'upcoming' && !showAsCompleted && (
+            <p className="tests_inline_hint">Скоро будет доступен</p>
           )}
         </div>
       </div>
@@ -851,7 +916,7 @@ function TestsList({
             }
             
             const completed = isTestCompleted(test);
-            const now = new Date();
+            const now = nowForAvailability;
             const startDate = new Date(test.startDate);
             const endDate = new Date(test.endDate);
             const available = now >= startDate && now <= endDate;
@@ -866,38 +931,7 @@ function TestsList({
         )}
       </div>
 
-      {/* Пагинация */}
-      {totalPages > 1 && (
-        <div className="tests_pagination">
-          <button 
-            className="tests_pagination_btn"
-            onClick={() => useServerPagination && onPageChange ? onPageChange(Math.max(1, currentPage - 1)) : setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-          >
-            ← Предыдущая
-          </button>
-          
-          <div className="tests_pagination_pages">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                className={`tests_pagination_page ${currentPage === page ? 'active' : ''}`}
-                onClick={() => useServerPagination && onPageChange ? onPageChange(page) : setCurrentPage(page)}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-          
-          <button 
-            className="tests_pagination_btn"
-            onClick={() => useServerPagination && onPageChange ? onPageChange(Math.min(totalPages, currentPage + 1)) : setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Следующая →
-          </button>
-        </div>
-      )}
+      {/* Пагинация отключена по задаче: показываем весь отфильтрованный список */}
     </div>
   );
 }
@@ -939,6 +973,13 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
     return () => clearInterval(timer);
   }, [session, isCompleted]);
+
+  // По истечении времени — автоматически отправить частичный результат и очистить сессию
+  useEffect(() => {
+    if (isTimeUp && !isCompleted && !isSubmitting) {
+      handleAutoCompleteTest();
+    }
+  }, [isTimeUp]);
 
   // Функция для обработки попыток копирования
   const handleCopyAttempt = (e) => {
@@ -1187,45 +1228,33 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
 
         console.log('Тест автоматически завершен, ID сессии:', response.data.id);
           setIsCompleted(true);
-          
-          // Обновляем сессию в localStorage как завершенную
-          const updatedSession = { ...session, isCompleted: true };
-          localStorage.setItem('testSession', JSON.stringify(updatedSession));
-          
+          localStorage.removeItem('testSession');
           onComplete(results);
       } catch (error) {
         console.error('Ошибка отправки результатов:', error);
         
         // Различаем типы ошибок
         if (error.response?.status === 409) {
-          // Обработка ошибки дублирования (тест уже сдан)
-          console.warn('Тест уже сдан:', error.response.data);
-          setSubmitError(`Тест уже был сдан ранее. Результат: ${error.response.data.existingScore || 'неизвестно'} баллов`);
+          const data = error.response?.data || {};
+          const existingScore = data.existingScore != null ? Number(data.existingScore) : results.ratingScore;
+          setSubmitError(`Тест уже был сдан ранее. Результат: ${existingScore} баллов`);
           setIsCompleted(true);
-          
-          // Обновляем сессию в localStorage как завершенную
-          const updatedSession = { ...session, isCompleted: true };
-          localStorage.setItem('testSession', JSON.stringify(updatedSession));
-          
-          onComplete(results);
+          localStorage.removeItem('testSession');
+          onComplete({ ...results, ratingScore: existingScore });
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           setSubmitError('Ошибка сети. Проверьте подключение к интернету и попробуйте еще раз.');
         } else {
           setSubmitError('Не удалось отправить результаты. Попробуйте еще раз.');
         }
-        
+
         setIsSubmitting(false);
         return;
       }
     } else {
       console.log('Режим тренировки - результаты не отправлены на сервер');
       setIsCompleted(true);
-      onComplete(results);
-    }
-
-    // Очищаем localStorage только при успешном завершении
-    if (isCompleted) {
       localStorage.removeItem('testSession');
+      onComplete(results);
     }
   };
 
@@ -1332,50 +1361,38 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           testTitle: test.title,
           answers: calculatedAnswers,
           timeSpentMinutes: timeSpentMinutes,
-          score: ratingScore // Отправляем рейтинговый балл вместо обычного score
+          score: ratingScore
         });
 
-        console.log('Тест завершен, ID сессии:', response.data.id);
-          setIsCompleted(true);
-          
-          // Обновляем сессию в localStorage как завершенную
-          const updatedSession = { ...session, isCompleted: true };
-          localStorage.setItem('testSession', JSON.stringify(updatedSession));
-          
-          onComplete(results);
+        setIsCompleted(true);
+        localStorage.removeItem('testSession');
+        onComplete(results);
+        if (response?.data?.id) console.log('Тест завершен, ID сессии:', response.data.id);
       } catch (error) {
         console.error('Ошибка отправки результатов:', error);
         
         // Различаем типы ошибок
         if (error.response?.status === 409) {
-          // Обработка ошибки дублирования (тест уже сдан)
-          console.warn('Тест уже сдан:', error.response.data);
-          setSubmitError(`Тест уже был сдан ранее. Результат: ${error.response.data.existingScore || 'неизвестно'} баллов`);
-          setIsCompleted(true); // Помечаем как завершенный, чтобы показать результаты
-          
-          // Обновляем сессию в localStorage как завершенную
-          const updatedSession = { ...session, isCompleted: true };
-          localStorage.setItem('testSession', JSON.stringify(updatedSession));
-          
-          onComplete(results); // Показываем результаты локально
+          const data = error.response?.data || {};
+          const existingScore = data.existingScore != null ? Number(data.existingScore) : results.ratingScore;
+          setSubmitError(`Тест уже был сдан ранее. Результат: ${existingScore} баллов`);
+          setIsCompleted(true);
+          localStorage.removeItem('testSession');
+          onComplete({ ...results, ratingScore: existingScore });
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           setSubmitError('Ошибка сети. Проверьте подключение к интернету и попробуйте еще раз.');
         } else {
           setSubmitError('Не удалось отправить результаты. Попробуйте еще раз.');
         }
-        
+
         setIsSubmitting(false);
-        return; // Не завершаем тест при ошибке
+        return;
       }
     } else {
       console.log('Режим тренировки - результаты не отправлены на сервер');
       setIsCompleted(true);
-      onComplete(results);
-    }
-
-    // Очищаем localStorage только при успешном завершении
-    if (isCompleted) {
       localStorage.removeItem('testSession');
+      onComplete(results);
     }
   };
 
@@ -1403,7 +1420,16 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
   return (
     <div className="tests_test_component">
       <div className="tests_test_header">
-        <button className="tests_back_btn" onClick={onBack}>← Назад</button>
+        <button
+          className="tests_back_btn"
+          onClick={() => {
+            const stateToSave = { ...session, currentQuestionIndex, answers };
+            localStorage.setItem('testSession', JSON.stringify(stateToSave));
+            onBack();
+          }}
+        >
+          ← Назад
+        </button>
         <div className="tests_test_title_container">
           <h2 className="tests_test_title">{test.title}</h2>
           {isPracticeMode && (
@@ -1553,16 +1579,17 @@ function TestComponent({ test, session, onComplete, onBack, getStudentId, isPrac
           <div className="tests_timeup_modal_content">
             <h2>⏰ Время вышло!</h2>
             <p>Время на прохождение теста истекло.</p>
-            <p>Нажмите "Завершить тест" чтобы отправить ваши ответы.</p>
-            <div className="tests_timeup_modal_buttons">
-              <button 
-                className="tests_timeup_btn tests_timeup_btn_primary"
-                onClick={handleCompleteTest}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Отправка...' : 'Завершить тест'}
-              </button>
-            </div>
+            <p>{isSubmitting ? 'Отправка ваших ответов…' : 'Ваши ответы отправляются автоматически.'}</p>
+            {!isSubmitting && (
+              <div className="tests_timeup_modal_buttons">
+                <button
+                  className="tests_timeup_btn tests_timeup_btn_primary"
+                  onClick={handleCompleteTest}
+                >
+                  Завершить тест
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

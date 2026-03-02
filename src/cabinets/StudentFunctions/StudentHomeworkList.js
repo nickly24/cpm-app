@@ -22,15 +22,13 @@ const StudentHomeworkList = () => {
     if (!studentId) return;
     try {
       setLoading(true);
-      const response = await axios.post(
-        `${API_BASE_URL}/api/get-homeworks-student`,
-        {
-          studentId,
-          page,
-          limit: homeworksPerPage,
-          homework_type: homeworkType === 'all' ? null : homeworkType
-        },
-        { headers: { 'Content-Type': 'application/json' } }
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(homeworksPerPage)
+      });
+      if (homeworkType && homeworkType !== 'all') params.set('type', homeworkType);
+      const response = await axios.get(
+        `${API_BASE_URL}/api/homeworks/student-with-sessions?${params.toString()}`
       );
 
       if (response.data?.status && Array.isArray(response.data?.res)) {
